@@ -1,32 +1,25 @@
 import { TabList, TabSlot, TabTrigger, TabTriggerSlotProps, Tabs } from 'expo-router/ui';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 
 export default function AppTabs() {
   return (
     <Tabs>
       <TabSlot style={{ height: '100%' }} />
-      <TabList asChild>
-        <View style={styles.tabListContainer}>
-          <ThemedView type="backgroundElement" style={styles.innerContainer}>
-            <ThemedText type="smallBold" style={styles.brandText}>
-              Livروei
-            </ThemedText>
-            <TabTrigger name="home" href="/" asChild>
-              <TabButton>Início</TabButton>
-            </TabTrigger>
-          </ThemedView>
-        </View>
+      <TabList style={styles.tabList}>
+        <TabTrigger name="index" href="/" asChild>
+          <TabButton>Início</TabButton>
+        </TabTrigger>
       </TabList>
     </Tabs>
   );
 }
 
-export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
+function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
   return (
     <Pressable {...props} style={({ pressed }) => pressed && styles.pressed}>
       <ThemedView
@@ -41,25 +34,11 @@ export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps
 }
 
 const styles = StyleSheet.create({
-  tabListContainer: {
-    position: 'absolute',
-    width: '100%',
-    padding: Spacing.three,
+  tabList: {
+    flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'row',
+    padding: Spacing.two,
   },
-  innerContainer: {
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.five,
-    borderRadius: Spacing.five,
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexGrow: 1,
-    gap: Spacing.two,
-    maxWidth: MaxContentWidth,
-  },
-  brandText: { marginRight: 'auto' },
   pressed: { opacity: 0.7 },
   tabButtonView: {
     paddingVertical: Spacing.one,
