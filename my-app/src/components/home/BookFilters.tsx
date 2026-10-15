@@ -1,22 +1,22 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity } from "react-native";
 
-import { AppColors } from '@/constants/colors';
+import { AppColors } from "@/constants/colors";
 
-export type FilterType = 'all' | 'donation' | 'exchange' | 'fiction';
+export type FilterType = "all" | "donation" | "exchange" | "fiction";
 
 const FILTERS: { key: FilterType; label: string }[] = [
-  { key: 'all', label: 'Todos' },
-  { key: 'donation', label: 'Doação' },
-  { key: 'exchange', label: 'Troca' },
-  { key: 'fiction', label: 'Ficção' },
+  { key: "all", label: "Todos" },
+  { key: "donation", label: "Doação" },
+  { key: "exchange", label: "Troca" },
+  { key: "fiction", label: "Ficção" },
 ];
 
-interface Props {
+interface BookFiltersProps {
   selected: FilterType;
   onSelect: (filter: FilterType) => void;
 }
 
-export function BookFilters({ selected, onSelect }: Props) {
+export function BookFilters({ selected, onSelect }: BookFiltersProps) {
   return (
     <ScrollView
       horizontal
@@ -32,7 +32,9 @@ export function BookFilters({ selected, onSelect }: Props) {
             onPress={() => onSelect(f.key)}
             activeOpacity={0.75}
           >
-            <Text style={[styles.label, active && styles.labelActive]}>{f.label}</Text>
+            <Text style={[styles.label, active && styles.labelActive]}>
+              {f.label}
+            </Text>
           </TouchableOpacity>
         );
       })}
@@ -54,6 +56,6 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.darkBlue,
     borderColor: AppColors.darkBlue,
   },
-  label: { fontSize: 13, fontWeight: '500', color: AppColors.graySecondary },
+  label: { fontSize: 13, fontWeight: "500", color: AppColors.graySecondary },
   labelActive: { color: AppColors.white },
 });
