@@ -1,16 +1,16 @@
-import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from "@expo/vector-icons";
+import { StyleSheet, Text, View } from "react-native";
 
-import { AppColors } from '@/constants/colors';
+import { AppColors } from "@/constants/colors";
 
-interface Props {
-  type: 'donation' | 'exchange';
-  size?: 'sm' | 'md';
+interface BookTypeBadgeProps {
+  type: "donation" | "exchange";
+  size?: "sm" | "md";
 }
 
-export function BookTypeBadge({ type, size = 'md' }: Props) {
-  const isDonation = type === 'donation';
-  const isSmall = size === 'sm';
+export function BookTypeBadge({ type, size = "md" }: BookTypeBadgeProps) {
+  const isDonation = type === "donation";
+  const isSmall = size === "sm";
 
   return (
     <View
@@ -21,7 +21,7 @@ export function BookTypeBadge({ type, size = 'md' }: Props) {
       ]}
     >
       <Ionicons
-        name={isDonation ? 'heart' : 'swap-horizontal'}
+        name={isDonation ? "heart" : "swap-horizontal"}
         size={isSmall ? 10 : 12}
         color={isDonation ? AppColors.donationText : AppColors.exchangeText}
       />
@@ -32,7 +32,7 @@ export function BookTypeBadge({ type, size = 'md' }: Props) {
           isSmall && styles.textSm,
         ]}
       >
-        {isDonation ? 'Doação' : 'Troca'}
+        {isDonation ? "Doação" : "Troca"}
       </Text>
     </View>
   );
@@ -40,13 +40,13 @@ export function BookTypeBadge({ type, size = 'md' }: Props) {
 
 const styles = StyleSheet.create({
   badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 20,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   badgeSm: {
     paddingHorizontal: 6,
@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
   },
   donationBg: { backgroundColor: AppColors.donationBg },
   exchangeBg: { backgroundColor: AppColors.exchangeBg },
-  text: { fontSize: 12, fontWeight: '600' },
+  text: { fontSize: 12, fontWeight: "600" },
   textSm: { fontSize: 10 },
   donationText: { color: AppColors.donationText },
   exchangeText: { color: AppColors.exchangeText },
