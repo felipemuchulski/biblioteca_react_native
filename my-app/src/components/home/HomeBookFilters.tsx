@@ -11,29 +11,29 @@ const FILTERS: { key: FilterType; label: string }[] = [
   { key: "fiction", label: "Ficção" },
 ];
 
-interface BookFiltersProps {
+interface HomeBookFiltersProps {
   selected: FilterType;
   onSelect: (filter: FilterType) => void;
 }
 
-export function BookFilters({ selected, onSelect }: BookFiltersProps) {
+export function HomeBookFilters({ selected, onSelect }: HomeBookFiltersProps) {
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.container}
     >
-      {FILTERS.map((f) => {
-        const active = selected === f.key;
+      {FILTERS.map((filter) => {
+        const active = selected === filter.key;
         return (
           <TouchableOpacity
-            key={f.key}
+            key={filter.key}
             style={[styles.chip, active && styles.chipActive]}
-            onPress={() => onSelect(f.key)}
+            onPress={() => onSelect(filter.key)}
             activeOpacity={0.75}
           >
             <Text style={[styles.label, active && styles.labelActive]}>
-              {f.label}
+              {filter.label}
             </Text>
           </TouchableOpacity>
         );

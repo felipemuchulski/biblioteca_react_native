@@ -2,37 +2,82 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "@/constants/colors";
+import { BookType } from "@/types/book";
+import { formatCarouselPagination } from "@/utils/formatter";
 
 interface BookTypeBadgeProps {
-  type: "donation" | "exchange";
+  type: BookType;
   size?: "sm" | "md";
+  index?: number;
+  maxLength?: number;
 }
 
-export function BookTypeBadge({ type, size = "md" }: BookTypeBadgeProps) {
-  const isDonation = type === "donation";
+interface BookTypeBadgeConfig {
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  backgroundColor: string;
+  textColor: string;
+}
+
+const BOOK_TYPE_CONFIG: Record<BookType, BookTypeBadgeConfig> = {
+  donation: {
+    label: "Doação",
+    icon: "heart",
+    backgroundColor: AppColors.donationBg,
+    textColor: AppColors.donationText,
+  },
+  exchange: {
+    label: "Troca",
+    icon: "swap-horizontal",
+    backgroundColor: AppColors.exchangeBg,
+    textColor: AppColors.exchangeText,
+  },
+  pagination: {
+    label: "x / y",
+    icon: "images-sharp",
+    backgroundColor: AppColors.white,
+    textColor: AppColors.blue,
+  },
+};
+export function BookTypeBadge({
+  type,
+  size = "md",
+  index = 0,
+  maxLength = 0,
+}: BookTypeBadgeProps) {
+  const bookBadgeConfig = BOOK_TYPE_CONFIG[type];
   const isSmall = size === "sm";
+  const isPagination = type === "pagination";
+  const text = formatCarouselPagination(
+    bookBadgeConfig.label,
+    index,
+    maxLength,
+  );
+
+  if (type === "pagination" && !index && !maxLength) return null;
 
   return (
     <View
       style={[
         styles.badge,
-        isDonation ? styles.donationBg : styles.exchangeBg,
+        { backgroundColor: bookBadgeConfig.backgroundColor },
         isSmall && styles.badgeSm,
+        isPagination && styles.pagination,
       ]}
     >
       <Ionicons
-        name={isDonation ? "heart" : "swap-horizontal"}
+        name={bookBadgeConfig.icon}
         size={isSmall ? 10 : 12}
-        color={isDonation ? AppColors.donationText : AppColors.exchangeText}
+        color={bookBadgeConfig.textColor}
       />
       <Text
         style={[
           styles.text,
-          isDonation ? styles.donationText : styles.exchangeText,
+          { color: bookBadgeConfig.textColor },
           isSmall && styles.textSm,
         ]}
       >
-        {isDonation ? "Doação" : "Troca"}
+        {type !== "pagination" ? bookBadgeConfig.label : text}
       </Text>
     </View>
   );
@@ -58,4 +103,10 @@ const styles = StyleSheet.create({
   textSm: { fontSize: 10 },
   donationText: { color: AppColors.donationText },
   exchangeText: { color: AppColors.exchangeText },
+  pagination: {
+    gap: 6,
+    position: "absolute",
+    bottom: 14,
+    right: 14,
+  },
 });

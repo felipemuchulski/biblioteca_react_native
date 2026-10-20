@@ -1,18 +1,27 @@
+import { BookImagesCarousel } from "@/components/books/BookImagesCarousel";
 import { BookTypeBadge } from "@/components/books/BookTypeBadge";
 import { AppColors } from "@/constants/colors";
 import { useBooks } from "@/contexts/books-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
+import { useState } from "react";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { BookHeader } from "./BookHeader";
+import { BookHeader } from "../../components/books/BookHeader";
 
 export default function BookDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { books, selectedBook } = useBooks();
-  const book = books?.find(
-    (book) => book.id === selectedBook?.id && book.id === id,
+  const { books } = useBooks();
+  const book = books?.find((book) => book.id === id);
+
+  const [selectedImage, setSelectedImage] = useState<string>(
+    book?.images[0] || "",
   );
+
+  const mainImage =
+    selectedImage && book?.images.includes(selectedImage)
+      ? selectedImage
+      : book?.images[0];
 
   if (!book) {
     return (
@@ -22,14 +31,32 @@ export default function BookDetailScreen() {
     );
   }
 
+  const currentImageIndex = mainImage
+    ? book?.images?.indexOf(mainImage) + 1
+    : 0;
+
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <BookHeader />
       <ScrollView contentContainerStyle={styles.content}>
-        <Image
-          source={{ uri: book.image }}
-          style={styles.cover}
-          defaultSource={require("@/assets/images/icon.png")}
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ uri: mainImage }}
+            style={styles.cover}
+            defaultSource={require("@/assets/images/icon.png")}
+          />
+          <BookTypeBadge
+            type="pagination"
+            index={currentImageIndex}
+            maxLength={book.images.length}
+          />
+        </View>
+
+        <BookImagesCarousel
+          book={book}
+          bookImages={book.images}
+          selectedImage={selectedImage}
+          onPress={setSelectedImage}
         />
         <View style={styles.info}>
           <BookTypeBadge type={book.type} />
@@ -41,7 +68,7 @@ export default function BookDetailScreen() {
               size={14}
               color={AppColors.graySecondary}
             />
-            <Text style={styles.meta}>{book.distance}</Text>
+            <Text style={styles.meta}>{book.category}</Text>
             <Ionicons
               name="person-outline"
               size={14}
@@ -60,9 +87,9 @@ const styles = StyleSheet.create({
   backText: { fontSize: 15, color: AppColors.darkBlue, fontWeight: "500" },
   content: { alignItems: "center", padding: 24, gap: 16 },
   cover: {
-    width: 180,
-    height: 240,
-    borderRadius: 14,
+    width: "100%",
+    height: 350,
+    borderRadius: 24,
     backgroundColor: AppColors.border,
   },
   info: { width: "100%", gap: 8 },
@@ -74,5 +101,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 40,
     color: AppColors.graySecondary,
+  },
+  imageContainer: {
+    width: "100%",
+    position: "relative",
   },
 });

@@ -19,7 +19,7 @@ export function BookCard({ book, onToggleFavorite, onPress }: BookCardProps) {
       activeOpacity={0.85}
     >
       <Image
-        source={{ uri: book.image }}
+        source={{ uri: book.thumbnail }}
         style={styles.cover}
         defaultSource={require("@/assets/images/icon.png")}
       />

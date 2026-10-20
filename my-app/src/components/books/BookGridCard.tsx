@@ -28,7 +28,7 @@ export function BookGridCard({ book, onPress }: BookGridCardProps) {
     >
       <View style={styles.imageContainer}>
         <Image
-          source={{ uri: book.image }}
+          source={{ uri: book.thumbnail }}
           style={styles.cover}
           defaultSource={require("@/assets/images/icon.png")}
         />

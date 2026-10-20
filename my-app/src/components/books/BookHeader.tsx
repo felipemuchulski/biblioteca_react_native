@@ -1,5 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import { AppColors } from "@/constants/colors";
 import { useRouter } from "expo-router";
@@ -13,12 +19,18 @@ export function BookHeader() {
         <Ionicons name="arrow-back" size={22} color={AppColors.darkBlue} />
       </TouchableOpacity>
 
-      <Text style={styles.logo}>
-        <TouchableOpacity style={styles.logoIcon}>
-          <Ionicons name="book-outline" size={17} color={AppColors.darkBlue} />
-        </TouchableOpacity>
-        Livroei
-      </Text>
+      <Pressable onPress={() => router.push({ pathname: "/", params: {} })}>
+        <Text style={styles.logo}>
+          <TouchableOpacity style={styles.logoIcon}>
+            <Ionicons
+              name="book-outline"
+              size={17}
+              color={AppColors.darkBlue}
+            />
+          </TouchableOpacity>
+          Livroei
+        </Text>
+      </Pressable>
 
       <TouchableOpacity style={styles.wishlistBtn}>
         <Ionicons name="heart-outline" size={20} color={AppColors.darkBlue} />
@@ -40,6 +52,8 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: AppColors.darkBlue,
     letterSpacing: 0.5,
+    alignItems: "center",
+    justifyContent: "center",
   },
   logoIcon: {
     backgroundColor: AppColors.logoBox,
