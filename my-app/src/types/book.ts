@@ -1,9 +1,12 @@
+export type BookType = "donation" | "exchange" | "pagination";
+
 export interface Book {
   id: string;
   title: string;
   author: string;
-  image: string;
-  type: "donation" | "exchange";
+  images: string[];
+  thumbnail: string;
+  type: BookType;
   distance: string;
   owner: string;
   isFavorite: boolean;

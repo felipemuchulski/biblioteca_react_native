@@ -12,7 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { BookCard } from "@/components/books/BookCard";
 import { BookGridCard } from "@/components/books/BookGridCard";
-import { BookFilters, FilterType } from "@/components/home/BookFilters";
+import { FilterType, HomeBookFilters } from "@/components/home/HomeBookFilters";
 import { HomeHeader } from "@/components/home/HomeHeader";
 import { AppColors } from "@/constants/colors";
 import { useBooks } from "@/contexts/books-context";
@@ -94,7 +94,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        <BookFilters selected={filter} onSelect={setFilter} />
+        <HomeBookFilters selected={filter} onSelect={setFilter} />
 
         <View style={styles.cardList}>
           {filteredBooks.map((book) => (
