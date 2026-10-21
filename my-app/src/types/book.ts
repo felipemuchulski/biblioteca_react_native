@@ -10,7 +10,8 @@ export interface Book {
   distance: string;
   owner: string;
   isFavorite: boolean;
-  category?: string;
+  category: string[];
+  available: boolean;
 }
 
 export interface BooksContextData {

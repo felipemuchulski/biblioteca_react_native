@@ -15,7 +15,8 @@ export const BOOKS: Book[] = [
     distance: "800 m",
     owner: "Marina",
     isFavorite: false,
-    category: "fiction",
+    category: ["fiction"],
+    available: true,
   },
   {
     id: "2",
@@ -30,7 +31,8 @@ export const BOOKS: Book[] = [
     distance: "1,2 km",
     owner: "Rafael",
     isFavorite: true,
-    category: "fiction",
+    category: ["fiction", "fantasy", "NOVEL"],
+    available: true,
   },
   {
     id: "3",
@@ -45,7 +47,8 @@ export const BOOKS: Book[] = [
     distance: "1,8 km",
     owner: "Luiza",
     isFavorite: false,
-    category: "fiction",
+    category: ["fiction"],
+    available: true,
   },
   {
     id: "4",
@@ -60,7 +63,8 @@ export const BOOKS: Book[] = [
     distance: "2,1 km",
     owner: "Anônimo",
     isFavorite: false,
-    category: "fiction",
+    category: ["fiction"],
+    available: true,
   },
   {
     id: "5",
@@ -76,7 +80,8 @@ export const BOOKS: Book[] = [
     distance: "2,4 km",
     owner: "Anônimo",
     isFavorite: false,
-    category: "non-fiction",
+    category: ["non-fiction"],
+    available: true,
   },
   {
     id: "6",
@@ -92,6 +97,7 @@ export const BOOKS: Book[] = [
     distance: "3,0 km",
     owner: "Anônimo",
     isFavorite: false,
-    category: "fiction",
+    category: ["fiction"],
+    available: true,
   },
 ];

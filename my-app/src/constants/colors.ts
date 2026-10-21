@@ -11,4 +11,6 @@ export const AppColors = {
   exchangeText: "#9A6F00",
   border: "#E8EFF4",
   actionborder: "#DCE9F0",
+  bookTitleText: "#17324D",
+  categoryText: "#52697E",
 } as const;
