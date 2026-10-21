@@ -1,3 +1,4 @@
+import { BookCategoryList } from "@/components/books/BookCategoryList";
 import { BookImagesCarousel } from "@/components/books/BookImagesCarousel";
 import { BookTypeBadge } from "@/components/books/BookTypeBadge";
 import { AppColors } from "@/constants/colors";
@@ -51,7 +52,6 @@ export default function BookDetailScreen() {
             maxLength={book.images.length}
           />
         </View>
-
         <BookImagesCarousel
           book={book}
           bookImages={book.images}
@@ -62,13 +62,13 @@ export default function BookDetailScreen() {
           <BookTypeBadge type={book.type} />
           <Text style={styles.title}>{book.title}</Text>
           <Text style={styles.author}>{book.author}</Text>
+          <BookCategoryList book={book} />
           <View style={styles.metaRow}>
             <Ionicons
               name="location-outline"
               size={14}
               color={AppColors.graySecondary}
             />
-            <Text style={styles.meta}>{book.category}</Text>
             <Ionicons
               name="person-outline"
               size={14}
@@ -85,7 +85,7 @@ export default function BookDetailScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: AppColors.background },
   backText: { fontSize: 15, color: AppColors.darkBlue, fontWeight: "500" },
-  content: { alignItems: "center", padding: 24, gap: 16 },
+  content: { alignItems: "center", padding: 20, gap: 12 },
   cover: {
     width: "100%",
     height: 350,
@@ -93,8 +93,8 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.border,
   },
   info: { width: "100%", gap: 8 },
-  title: { fontSize: 22, fontWeight: "800", color: AppColors.darkBlue },
-  author: { fontSize: 15, color: AppColors.graySecondary },
+  title: { fontSize: 22, fontWeight: "800", color: AppColors.bookTitleText },
+  author: { fontSize: 15, color: AppColors.categoryText },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
   meta: { fontSize: 13, color: AppColors.graySecondary },
   notFound: {

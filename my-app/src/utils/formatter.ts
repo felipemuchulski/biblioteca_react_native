@@ -9,3 +9,8 @@ export function formatCarouselPagination(
     .replace(/\bx\b/g, String(current))
     .replace(/\by\b/g, String(maximum));
 }
+
+export function formatTitleToInternValue(title: string) {
+  if (!title) return;
+  return title.toLowerCase().replaceAll(" ", "-");
+}

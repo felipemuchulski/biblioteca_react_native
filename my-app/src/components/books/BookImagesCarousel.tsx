@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
     objectFit: "cover",
     justifyContent: "flex-start",
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 12,
     gap: 10,
   },
   imageContainer: {
