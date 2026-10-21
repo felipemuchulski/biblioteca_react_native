@@ -104,9 +104,12 @@ const styles = StyleSheet.create({
   donationText: { color: AppColors.donationText },
   exchangeText: { color: AppColors.exchangeText },
   pagination: {
+    minWidth: 60,
     gap: 6,
     position: "absolute",
     bottom: 14,
     right: 14,
+    fontVariant: ["tabular-nums"],
+    justifyContent: "space-between",
   },
 });
