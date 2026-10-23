@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 12,
     gap: 12,
-    shadowColor: "#000",
+    shadowColor: AppColors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.07,
     shadowRadius: 8,
