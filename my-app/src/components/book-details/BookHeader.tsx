@@ -13,21 +13,34 @@ import { useRouter } from "expo-router";
 export function BookHeader() {
   const router = useRouter();
 
+  function handleGoBack() {
+    if (!router) return;
+
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.push({ pathname: "/", params: {} });
+    }
+  }
+
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+      <TouchableOpacity style={styles.backBtn} onPress={handleGoBack}>
         <Ionicons name="arrow-back" size={22} color={AppColors.darkBlue} />
       </TouchableOpacity>
 
-      <Pressable onPress={() => router.push({ pathname: "/", params: {} })}>
+      <Pressable
+        style={styles.logoContainer}
+        onPress={() => router.push({ pathname: "/", params: {} })}
+      >
         <Text style={styles.logo}>
-          <TouchableOpacity style={styles.logoIcon}>
+          <View style={styles.logoIcon}>
             <Ionicons
               name="book-outline"
               size={17}
               color={AppColors.darkBlue}
             />
-          </TouchableOpacity>
+          </View>
           Livroei
         </Text>
       </Pressable>
@@ -45,9 +58,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingVertical: 12,
+  },
+  logoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   logo: {
+    gap: 7,
     fontSize: 22,
     fontWeight: "800",
     color: AppColors.darkBlue,
@@ -60,17 +78,6 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 7,
-  },
-  rightActions: { flexDirection: "row", alignItems: "center", gap: 8 },
-  iconBtn: { padding: 4 },
-  addBtn: {
-    backgroundColor: AppColors.blue,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
   },

@@ -2,16 +2,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { BookCard } from "@/components/books/BookCard";
-import { BookGridCard } from "@/components/books/BookGridCard";
+import { BookCard } from "@/components/book-details/BookCard";
+import { BookGridCard } from "@/components/book-details/BookGridCard";
 import { FilterType, HomeBookFilters } from "@/components/home/HomeBookFilters";
 import { HomeHeader } from "@/components/home/HomeHeader";
 import { AppColors } from "@/constants/colors";
@@ -42,7 +42,7 @@ export default function HomeScreen() {
   const filteredBooks = books.filter((b) => {
     if (filter === "donation") return b.type === "donation";
     if (filter === "exchange") return b.type === "exchange";
-    if (filter === "fiction") return b.category === "fiction";
+    if (filter === "fiction") return b.category.includes("fiction");
     return true;
   });
 
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   bannerBadge: {
-    backgroundColor: "rgba(255,255,255,0.15)",
+    backgroundColor: "#ffffff26",
     alignSelf: "flex-start",
     paddingHorizontal: 10,
     paddingVertical: 4,

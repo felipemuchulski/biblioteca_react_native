@@ -17,6 +17,11 @@ export const BOOKS: Book[] = [
     isFavorite: false,
     category: ["fiction"],
     available: true,
+    bookCondition: "like_new",
+    bookConditionNote:
+      "Li uma única vez e guardei com cuidado na estante. Está praticamente como novo.",
+    ownerNeighborhood: "Exposição",
+    ownerCity: "Caxias do Sul",
   },
   {
     id: "2",
@@ -33,6 +38,11 @@ export const BOOKS: Book[] = [
     isFavorite: true,
     category: ["fiction", "fantasy", "NOVEL"],
     available: true,
+    bookCondition: "good",
+    bookConditionNote:
+      "Li com carinho e quero passar adiante. Páginas sem grifos; capa com marcas de uso e cantos desgastados.",
+    ownerNeighborhood: "São José",
+    ownerCity: "Caxias do Sul",
   },
   {
     id: "3",
@@ -49,6 +59,11 @@ export const BOOKS: Book[] = [
     isFavorite: false,
     category: ["fiction"],
     available: true,
+    bookCondition: "new",
+    bookConditionNote:
+      "Ganhei de presente em duplicidade, então este exemplar nunca foi aberto.",
+    ownerNeighborhood: "Pio X",
+    ownerCity: "Caxias do Sul",
   },
   {
     id: "4",
@@ -65,6 +80,11 @@ export const BOOKS: Book[] = [
     isFavorite: false,
     category: ["fiction"],
     available: true,
+    bookCondition: "worn",
+    bookConditionNote:
+      "Edição antiga, bem lida. Tem algumas páginas amareladas e anotações a lápis nas margens.",
+    ownerNeighborhood: "Panazzolo",
+    ownerCity: "Caxias do Sul",
   },
   {
     id: "5",
@@ -82,6 +102,10 @@ export const BOOKS: Book[] = [
     isFavorite: false,
     category: ["non-fiction"],
     available: true,
+    bookCondition: "good",
+    bookConditionNote: "Poucas marcas de uso.",
+    ownerNeighborhood: "Cristo Redentor",
+    ownerCity: "Caxias do Sul",
   },
   {
     id: "6",
@@ -99,5 +123,7 @@ export const BOOKS: Book[] = [
     isFavorite: false,
     category: ["fiction"],
     available: true,
+    bookCondition: "good",
+    ownerCity: "Caxias do Sul",
   },
 ];

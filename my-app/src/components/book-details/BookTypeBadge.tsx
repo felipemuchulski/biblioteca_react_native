@@ -97,12 +97,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 3,
   },
-  donationBg: { backgroundColor: AppColors.donationBg },
-  exchangeBg: { backgroundColor: AppColors.exchangeBg },
   text: { fontSize: 12, fontWeight: "600" },
   textSm: { fontSize: 10 },
-  donationText: { color: AppColors.donationText },
-  exchangeText: { color: AppColors.exchangeText },
   pagination: {
     minWidth: 60,
     gap: 6,

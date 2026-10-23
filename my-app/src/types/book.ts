@@ -1,4 +1,5 @@
 export type BookType = "donation" | "exchange" | "pagination";
+export type BookCondition = "new" | "like_new" | "good" | "worn";
 
 export interface Book {
   id: string;
@@ -12,6 +13,10 @@ export interface Book {
   isFavorite: boolean;
   category: string[];
   available: boolean;
+  bookCondition: BookCondition;
+  bookConditionNote?: string;
+  ownerNeighborhood?: string;
+  ownerCity?: string;
 }
 
 export interface BooksContextData {

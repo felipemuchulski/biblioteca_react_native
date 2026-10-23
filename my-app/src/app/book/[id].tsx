@@ -1,6 +1,10 @@
-import { BookCategoryList } from "@/components/books/BookCategoryList";
-import { BookImagesCarousel } from "@/components/books/BookImagesCarousel";
-import { BookTypeBadge } from "@/components/books/BookTypeBadge";
+import { BookAboutCard } from "@/components/book-details/BookAboutCard";
+import { BookCategoryList } from "@/components/book-details/BookCategoryList";
+import { BookImagesCarousel } from "@/components/book-details/BookImagesCarousel";
+import { BookOwnerCard } from "@/components/book-details/BookOwnerCard";
+import { BookTradeButton } from "@/components/book-details/BookTradeButton";
+import { BookTradeInfoCard } from "@/components/book-details/BookTradeInfoCard";
+import { BookTypeBadge } from "@/components/book-details/BookTypeBadge";
 import { AppColors } from "@/constants/colors";
 import { useBooks } from "@/contexts/books-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -8,7 +12,7 @@ import { useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { BookHeader } from "../../components/books/BookHeader";
+import { BookHeader } from "../../components/book-details/BookHeader";
 
 export default function BookDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -32,9 +36,9 @@ export default function BookDetailScreen() {
     );
   }
 
-  const currentImageIndex = mainImage
-    ? book?.images?.indexOf(mainImage) + 1
-    : 0;
+  const currentImageIndex = mainImage ? book.images.indexOf(mainImage) + 1 : 0;
+
+  const isExchange = book.type === "exchange";
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -52,12 +56,14 @@ export default function BookDetailScreen() {
             maxLength={book.images.length}
           />
         </View>
+
         <BookImagesCarousel
           book={book}
           bookImages={book.images}
           selectedImage={selectedImage}
           onPress={setSelectedImage}
         />
+
         <View style={styles.info}>
           <BookTypeBadge type={book.type} />
           <Text style={styles.title}>{book.title}</Text>
@@ -69,6 +75,7 @@ export default function BookDetailScreen() {
               size={14}
               color={AppColors.graySecondary}
             />
+            <Text style={styles.meta}>{book.distance}</Text>
             <Ionicons
               name="person-outline"
               size={14}
@@ -77,6 +84,30 @@ export default function BookDetailScreen() {
             <Text style={styles.meta}>{book.owner}</Text>
           </View>
         </View>
+
+        <View style={styles.sections}>
+          <BookAboutCard
+            bookCondition={book.bookCondition}
+            bookConditionNote={book.bookConditionNote}
+          />
+
+          <BookOwnerCard
+            owner={book.owner}
+            distance={book.distance}
+            ownerNeighborhood={book.ownerNeighborhood}
+            ownerCity={book.ownerCity}
+          />
+
+          {isExchange && (
+            <>
+              <BookTradeInfoCard ownerName={book.owner} />
+              <BookTradeButton
+                onPress={() => console.log("teste")}
+                disabled={!book.available}
+              />
+            </>
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -84,7 +115,6 @@ export default function BookDetailScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: AppColors.background },
-  backText: { fontSize: 15, color: AppColors.darkBlue, fontWeight: "500" },
   content: { alignItems: "center", padding: 20, gap: 12 },
   cover: {
     width: "100%",
@@ -102,8 +132,6 @@ const styles = StyleSheet.create({
     marginTop: 40,
     color: AppColors.graySecondary,
   },
-  imageContainer: {
-    width: "100%",
-    position: "relative",
-  },
+  imageContainer: { width: "100%", position: "relative" },
+  sections: { width: "100%", gap: 24, marginTop: 12 },
 });

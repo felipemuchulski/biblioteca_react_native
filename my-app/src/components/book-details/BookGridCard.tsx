@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.white,
     borderRadius: 16,
     overflow: "hidden",
-    shadowColor: "#000",
+    shadowColor: AppColors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.07,
     shadowRadius: 8,
