@@ -1,12 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { AppColors } from '@/constants/colors';
 
 export function HomeHeader() {
+  const router = useRouter();
+
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.iconBtn}>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel="Criar conta"
+        onPress={() => router.push('/register' as never)}
+        style={styles.iconBtn}
+      >
         <Ionicons name="person-circle-outline" size={28} color={AppColors.darkBlue} />
       </TouchableOpacity>
 
