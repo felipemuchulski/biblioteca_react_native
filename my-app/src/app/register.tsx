@@ -16,12 +16,18 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppColors } from '@/constants/colors';
-import { registerUser } from '../../database/users';
+import {
+  formatWhatsappInput,
+  normalizeWhatsappNumber,
+  registerUser,
+  UserProfileSaveError,
+} from '../../database/users';
 
 export default function RegisterScreen() {
   const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -31,6 +37,11 @@ export default function RegisterScreen() {
     setError('');
     if (!name.trim() || !email.trim() || !password) {
       setError('Preencha seu nome, e-mail e senha.');
+      return;
+    }
+    const normalizedWhatsapp = normalizeWhatsappNumber(whatsapp);
+    if (!normalizedWhatsapp) {
+      setError('Informe um WhatsApp válido com DDD. Ex.: +55 (11) 99999-9999.');
       return;
     }
     if (!/[A-Z]/.test(password)) {
@@ -56,10 +67,14 @@ export default function RegisterScreen() {
 
     setSubmitting(true);
     try {
-      await registerUser(name, email, password);
+      await registerUser(name, email, password, normalizedWhatsapp);
       router.replace('/');
     } catch (cause) {
-      if (cause instanceof FirebaseError) {
+      if (cause instanceof UserProfileSaveError) {
+        setError(
+          'A conta foi criada, mas o WhatsApp não foi salvo. Confira a configuração e as regras do Firestore antes de tentar novamente.'
+        );
+      } else if (cause instanceof FirebaseError) {
         const messages: Record<string, string> = {
           'auth/email-already-in-use': 'Este e-mail já está cadastrado.',
           'auth/invalid-email': 'Digite um e-mail válido.',
@@ -123,6 +138,18 @@ export default function RegisterScreen() {
               placeholderTextColor={AppColors.graySecondary}
               style={styles.input}
               value={email}
+              returnKeyType="next"
+            />
+
+            <Text style={styles.label}>WhatsApp</Text>
+            <TextInput
+              autoComplete="tel"
+              keyboardType="phone-pad"
+              onChangeText={(value) => setWhatsapp(formatWhatsappInput(value))}
+              placeholder="+55 (11) 99999-9999"
+              placeholderTextColor={AppColors.graySecondary}
+              style={styles.input}
+              value={whatsapp}
               returnKeyType="next"
             />
 
