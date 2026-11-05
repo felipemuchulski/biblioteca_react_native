@@ -19,6 +19,10 @@ export default function AppTabs() {
           renderingMode="template"
         />
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="register">
+        <NativeTabs.Trigger.Label>Cadastro</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="person.crop.circle.badge.plus" />
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }

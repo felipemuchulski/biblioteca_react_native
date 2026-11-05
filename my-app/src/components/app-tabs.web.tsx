@@ -11,6 +11,9 @@ export default function AppTabs() {
     <Tabs>
       <TabSlot style={{ height: '100%' }} />
       <TabList style={styles.tabList}>
+        <TabTrigger name="register" href="/register" asChild>
+          <TabButton>Cadastro</TabButton>
+        </TabTrigger>
         <TabTrigger name="index" href="/" asChild>
           <TabButton>Início</TabButton>
         </TabTrigger>
