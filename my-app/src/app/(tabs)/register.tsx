@@ -16,6 +16,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppColors } from "@/constants/colors";
+import { AddressFields } from "@/components/profile/AddressFields";
+import { emptyAddress, validateAddress } from "@/utils/address";
 import {
   formatWhatsappInput,
   normalizeWhatsappNumber,
@@ -32,9 +34,16 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [address, setAddress] = useState({ ...emptyAddress });
 
   const handleRegister = async () => {
+    if (submitting) return;
     setError("");
+    const addressError = validateAddress(address);
+    if (addressError) {
+      setError(addressError);
+      return;
+    }
     if (!name.trim() || !email.trim() || !password) {
       setError("Preencha seu nome, e-mail e senha.");
       return;
@@ -67,8 +76,8 @@ export default function RegisterScreen() {
 
     setSubmitting(true);
     try {
-      await registerUser(name, email, password, normalizedWhatsapp);
-      router.replace("/");
+      await registerUser(name, email, password, normalizedWhatsapp, address);
+      router.replace("/profile");
     } catch (cause) {
       if (cause instanceof UserProfileSaveError) {
         setError(
@@ -127,7 +136,7 @@ export default function RegisterScreen() {
                 color={AppColors.blue}
               />
             </View>
-            <Text style={styles.title}>Crie sua conta</Text>
+            <Text style={styles.title}>Crie seu perfil</Text>
             <Text style={styles.subtitle}>
               Entre para fazer parte da comunidade Livroei.
             </Text>
@@ -204,6 +213,8 @@ export default function RegisterScreen() {
                 {error}
               </Text>
             ) : null}
+
+            <AddressFields value={address} onChange={setAddress} disabled={submitting} />
 
             <TouchableOpacity
               accessibilityRole="button"

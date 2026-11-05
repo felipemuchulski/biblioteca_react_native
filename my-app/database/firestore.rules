@@ -1,39 +1,50 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function validText(value) {
+      return value is string && value.size() <= 120;
+    }
+
+    function validAddress(data) {
+      return !('address' in data) || (
+        data.address is map
+        && data.address.keys().hasAll(['postalCode', 'street', 'number', 'complement', 'neighborhood', 'city', 'state'])
+        && data.address.keys().hasOnly(['postalCode', 'street', 'number', 'complement', 'neighborhood', 'city', 'state'])
+        && validText(data.address.postalCode)
+        && validText(data.address.street)
+        && validText(data.address.number)
+        && validText(data.address.complement)
+        && validText(data.address.neighborhood)
+        && validText(data.address.city)
+        && validText(data.address.state)
+        && ((data.address.postalCode == '' && data.address.street == ''
+          && data.address.number == '' && data.address.complement == ''
+          && data.address.neighborhood == '' && data.address.city == '' && data.address.state == '')
+          || (data.address.postalCode.matches('^[0-9]{8}$')
+            && data.address.street.size() > 0 && data.address.number.size() > 0
+            && data.address.neighborhood.size() > 0 && data.address.city.size() > 0
+            && data.address.state.matches('^(AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)$')))
+      );
+    }
+
+    function validProfile(data) {
+      return validText(data.displayName) && data.displayName.size() > 0
+        && data.whatsapp is string && data.whatsapp.matches('^\\+[1-9][0-9]{7,14}$')
+        && validAddress(data);
+    }
+
     match /users/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
-
-      allow create: if request.auth != null
-        && request.auth.uid == userId
-        && request.resource.data.keys().hasOnly([
-          'uid',
-          'displayName',
-          'email',
-          'whatsapp',
-          'createdAt'
-        ])
-        && request.resource.data.keys().hasAll([
-          'uid',
-          'displayName',
-          'email',
-          'whatsapp',
-          'createdAt'
-        ])
+      allow create: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['uid', 'displayName', 'email', 'whatsapp', 'address', 'createdAt'])
+        && request.resource.data.keys().hasAll(['uid', 'displayName', 'email', 'whatsapp', 'createdAt'])
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.displayName is string
         && request.resource.data.email == request.auth.token.email
-        && request.resource.data.whatsapp is string
-        && request.resource.data.whatsapp.matches('^\\+[1-9][0-9]{7,14}$')
-        && request.resource.data.createdAt == request.time;
-
-      allow update: if request.auth != null
-        && request.auth.uid == userId
-        && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['displayName', 'whatsapp'])
-        && request.resource.data.whatsapp is string
-        && request.resource.data.whatsapp.matches('^\\+[1-9][0-9]{7,14}$');
-
+        && request.resource.data.createdAt == request.time
+        && validProfile(request.resource.data);
+      allow update: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'whatsapp', 'address'])
+        && validProfile(request.resource.data);
       allow delete: if false;
     }
   }

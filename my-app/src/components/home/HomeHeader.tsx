@@ -11,8 +11,8 @@ export function HomeHeader() {
     <View style={styles.container}>
       <TouchableOpacity
         accessibilityRole="button"
-        accessibilityLabel="Criar conta"
-        onPress={() => router.push("/register" as never)}
+        accessibilityLabel="Meu perfil"
+        onPress={() => router.push("/profile")}
         style={styles.iconBtn}
       >
         <Ionicons
