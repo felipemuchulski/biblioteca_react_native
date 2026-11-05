@@ -1,45 +1,39 @@
-import { TabList, TabSlot, TabTrigger, TabTriggerSlotProps, Tabs } from 'expo-router/ui';
-import { Pressable, StyleSheet } from 'react-native';
+import { TabList, TabSlot, TabTrigger, Tabs } from "expo-router/ui";
+import { Pressable, StyleSheet, Text } from "react-native";
 
-import { ThemedText } from './themed-text';
-import { ThemedView } from './themed-view';
-
-import { Spacing } from '@/constants/theme';
+import { Spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
 
 export default function AppTabs() {
+  const theme = useTheme();
+
   return (
     <Tabs>
-      <TabSlot style={{ height: '100%' }} />
+      <TabSlot style={{ height: "100%" }} />
       <TabList style={styles.tabList}>
         <TabTrigger name="register" href="/register" asChild>
-          <TabButton>Cadastro</TabButton>
+          <Pressable>
+            <Text style={[styles.text, { color: theme.backgroundElement }]}>
+              Cadastro
+            </Text>
+          </Pressable>
         </TabTrigger>
         <TabTrigger name="index" href="/" asChild>
-          <TabButton>Início</TabButton>
+          <Pressable>
+            <Text style={[styles.text, { color: theme.backgroundElement }]}>
+              Início
+            </Text>
+          </Pressable>
         </TabTrigger>
       </TabList>
     </Tabs>
   );
 }
 
-function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
-  return (
-    <Pressable {...props} style={({ pressed }) => pressed && styles.pressed}>
-      <ThemedView
-        type={isFocused ? 'backgroundSelected' : 'backgroundElement'}
-        style={styles.tabButtonView}>
-        <ThemedText type="small" themeColor={isFocused ? 'text' : 'textSecondary'}>
-          {children}
-        </ThemedText>
-      </ThemedView>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   tabList: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     padding: Spacing.two,
   },
   pressed: { opacity: 0.7 },
@@ -47,5 +41,10 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
     paddingHorizontal: Spacing.three,
     borderRadius: Spacing.three,
+  },
+  text: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: 500,
   },
 });
