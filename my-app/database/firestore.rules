@@ -47,5 +47,15 @@ service cloud.firestore {
         && validProfile(request.resource.data);
       allow delete: if false;
     }
+
+    match /books/{bookId} {
+      allow read: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /trades/{tradeId} {
+      allow read: if request.auth != null && request.auth.uid in resource.data.participantIds;
+      allow write: if false;
+    }
   }
 }

@@ -76,6 +76,10 @@ export default function ProfileScreen() {
             {!profile && !editing && (
               <Text style={styles.error}>Os dados complementares do seu perfil ainda não foram salvos. Se você acabou de se cadastrar, aguarde a conclusão do cadastro.</Text>
             )}
+            <View style={styles.card}>
+              <Link href="./profile-books" style={styles.navigation}>Meus livros cadastrados →</Link>
+              <Link href="./profile-trades" style={styles.navigation}>Histórico de trocas →</Link>
+            </View>
           </>
         )}
       </ScrollView>
@@ -98,4 +102,5 @@ const styles = StyleSheet.create({
   error: { color: '#B42318', lineHeight: 22 },
   button: { backgroundColor: AppColors.blue, padding: 16, borderRadius: 12, textAlign: 'center', alignItems: 'center', marginTop: 12 },
   buttonText: { color: AppColors.white, fontWeight: '700', fontSize: 16 },
+  navigation: { color: AppColors.blue, fontSize: 16, paddingVertical: 14, fontWeight: '600' },
 });
