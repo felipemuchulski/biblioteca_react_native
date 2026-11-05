@@ -10,15 +10,17 @@ const firebaseConfig = {
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
-const requiredConfigKeys = [
-  'EXPO_PUBLIC_FIREBASE_API_KEY',
-  'EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN',
-  'EXPO_PUBLIC_FIREBASE_PROJECT_ID',
-  'EXPO_PUBLIC_FIREBASE_APP_ID',
-] as const;
-
 export function getFirebaseAuth() {
-  const missingKeys = requiredConfigKeys.filter((key) => !process.env[key]);
+  // Expo substitutes only static process.env.EXPO_PUBLIC_* references in bundles.
+  const requiredConfig = {
+    EXPO_PUBLIC_FIREBASE_API_KEY: firebaseConfig.apiKey,
+    EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: firebaseConfig.authDomain,
+    EXPO_PUBLIC_FIREBASE_PROJECT_ID: firebaseConfig.projectId,
+    EXPO_PUBLIC_FIREBASE_APP_ID: firebaseConfig.appId,
+  };
+  const missingKeys = Object.entries(requiredConfig)
+    .filter(([, value]) => !value)
+    .map(([key]) => key);
   if (missingKeys.length > 0) {
     throw new Error(
       `Configure as variáveis do Firebase no arquivo .env: ${missingKeys.join(', ')}`
