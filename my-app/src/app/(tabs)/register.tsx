@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { FirebaseError } from "firebase/app";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppColors } from "@/constants/colors";
+import { setAddressSelectionHandler } from "@/utils/address-selection";
 import {
   formatWhatsappInput,
   normalizeWhatsappNumber,
@@ -28,15 +29,24 @@ export default function RegisterScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [address, setAddress] = useState("");
+  const [coordinates, setCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    setAddressSelectionHandler((selected) => {
+      setCoordinates(selected);
+    });
+    return () => setAddressSelectionHandler(undefined);
+  }, []);
+
   const handleRegister = async () => {
     setError("");
-    if (!name.trim() || !email.trim() || !password) {
-      setError("Preencha seu nome, e-mail e senha.");
+    if (!name.trim() || !email.trim() || !password || !address.trim() || !coordinates) {
+      setError("Preencha seus dados, o endereço e selecione o local no mapa.");
       return;
     }
     const normalizedWhatsapp = normalizeWhatsappNumber(whatsapp);
@@ -67,13 +77,25 @@ export default function RegisterScreen() {
 
     setSubmitting(true);
     try {
-      await registerUser(name, email, password, normalizedWhatsapp);
+      await registerUser(name, email, password, normalizedWhatsapp, {
+        address: address.trim(),
+        ...coordinates,
+      });
       router.replace("/");
     } catch (cause) {
       if (cause instanceof UserProfileSaveError) {
-        setError(
-          "A conta foi criada, mas o WhatsApp não foi salvo. Confira a configuração e as regras do Firestore antes de tentar novamente.",
-        );
+        const firestoreCause = cause.originalCause;
+        if (firestoreCause instanceof FirebaseError && firestoreCause.code === "permission-denied") {
+          setError(
+            "O Firestore recusou os campos do perfil. Publique as regras atualizadas de database/firestore.rules e tente novamente; a conta já foi criada.",
+          );
+        } else {
+          setError(
+            firestoreCause instanceof FirebaseError
+              ? `A conta foi criada, mas o perfil não foi salvo (${firestoreCause.code}). Tente novamente após corrigir a configuração do Firestore.`
+              : "A conta foi criada, mas o perfil não foi salvo. Tente novamente após conferir a configuração do Firestore.",
+          );
+        }
       } else if (cause instanceof FirebaseError) {
         const messages: Record<string, string> = {
           "auth/email-already-in-use": "Este e-mail já está cadastrado.",
@@ -171,6 +193,33 @@ export default function RegisterScreen() {
               returnKeyType="next"
             />
 
+            <Text style={styles.label}>Endereço</Text>
+            <TextInput
+              autoCapitalize="words"
+              onChangeText={setAddress}
+              placeholder="Rua, número, bairro e cidade"
+              placeholderTextColor={AppColors.graySecondary}
+              style={styles.input}
+              value={address}
+              returnKeyType="next"
+            />
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={() => router.push("/address-picker" as never)}
+              style={styles.mapButton}
+            >
+              <Ionicons name="map-outline" size={20} color={AppColors.blue} />
+              <Text style={styles.mapButtonText}>
+                {coordinates ? "Alterar localização no mapa" : "Selecionar localização no mapa"}
+              </Text>
+              <Ionicons name="chevron-forward" size={18} color={AppColors.graySecondary} />
+            </TouchableOpacity>
+            {coordinates ? (
+              <Text style={styles.coordinates}>
+                Local selecionado: {coordinates.latitude.toFixed(5)}, {coordinates.longitude.toFixed(5)}
+              </Text>
+            ) : null}
+
             <Text style={styles.label}>Senha</Text>
             <TextInput
               autoCapitalize="none"
@@ -267,6 +316,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 14,
   },
+  mapButton: {
+    minHeight: 50,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: AppColors.white,
+    borderColor: AppColors.border,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+  },
+  mapButtonText: { color: AppColors.darkBlue, flex: 1, fontSize: 14 },
+  coordinates: { color: AppColors.graySecondary, fontSize: 12 },
   error: { color: "#B42318", fontSize: 13, lineHeight: 19, marginTop: 4 },
   submit: {
     alignItems: "center",

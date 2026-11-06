@@ -38,9 +38,12 @@ export function normalizeWhatsappNumber(value: string): string | null {
 }
 
 export class UserProfileSaveError extends Error {
+  readonly originalCause: unknown;
+
   constructor(cause: unknown) {
     super('A conta foi criada, mas não foi possível salvar o perfil no Firestore.');
     this.name = 'UserProfileSaveError';
+    this.originalCause = cause;
     this.cause = cause;
   }
 }
@@ -49,30 +52,35 @@ export async function registerUser(
   name: string,
   email: string,
   password: string,
-  whatsapp: string
+  whatsapp: string,
+  location: { address: string; latitude: number; longitude: number }
 ) {
   const auth = getFirebaseAuth();
   const normalizedName = name.trim();
   const normalizedEmail = email.trim().toLowerCase();
-  const credential = await createUserWithEmailAndPassword(
-    auth,
-    normalizedEmail,
-    password
-  );
+  const currentUser = auth.currentUser;
+  const user = currentUser?.email?.toLowerCase() === normalizedEmail
+    ? currentUser
+    : (await createUserWithEmailAndPassword(auth, normalizedEmail, password)).user;
 
   try {
-    await updateProfile(credential.user, { displayName: normalizedName });
+    await updateProfile(user, { displayName: normalizedName });
     const { doc, getFirestore, serverTimestamp, setDoc } = await import('firebase/firestore');
-    await setDoc(doc(getFirestore(), 'users', credential.user.uid), {
-      uid: credential.user.uid,
+    await setDoc(doc(getFirestore(), 'users', user.uid), {
+      uid: user.uid,
       displayName: normalizedName,
       email: normalizedEmail,
       whatsapp,
+      address: location.address,
+      location: {
+        latitude: location.latitude,
+        longitude: location.longitude,
+      },
       createdAt: serverTimestamp(),
-    });
+    }, { merge: true });
   } catch (cause) {
     throw new UserProfileSaveError(cause);
   }
 
-  return credential.user;
+  return user;
 }

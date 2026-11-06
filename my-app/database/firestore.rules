@@ -1,6 +1,18 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function hasValidLocation(location) {
+      return location is map
+        && location.keys().hasOnly(['latitude', 'longitude'])
+        && location.keys().hasAll(['latitude', 'longitude'])
+        && location.latitude is number
+        && location.latitude >= -90
+        && location.latitude <= 90
+        && location.longitude is number
+        && location.longitude >= -180
+        && location.longitude <= 180;
+    }
+
     match /users/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
 
@@ -11,6 +23,8 @@ service cloud.firestore {
           'displayName',
           'email',
           'whatsapp',
+          'address',
+          'location',
           'createdAt'
         ])
         && request.resource.data.keys().hasAll([
@@ -18,6 +32,8 @@ service cloud.firestore {
           'displayName',
           'email',
           'whatsapp',
+          'address',
+          'location',
           'createdAt'
         ])
         && request.resource.data.uid == request.auth.uid
@@ -25,14 +41,26 @@ service cloud.firestore {
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.whatsapp is string
         && request.resource.data.whatsapp.matches('^\\+[1-9][0-9]{7,14}$')
+        && request.resource.data.address is string
+        && request.resource.data.address.size() > 0
+        && hasValidLocation(request.resource.data.location)
         && request.resource.data.createdAt == request.time;
 
       allow update: if request.auth != null
         && request.auth.uid == userId
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['displayName', 'whatsapp'])
+          .hasOnly(['displayName', 'whatsapp', 'address', 'location'])
         && request.resource.data.whatsapp is string
-        && request.resource.data.whatsapp.matches('^\\+[1-9][0-9]{7,14}$');
+        && request.resource.data.whatsapp.matches('^\\+[1-9][0-9]{7,14}$')
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['address', 'location'])
+          || (
+            request.resource.data.address is string
+            && request.resource.data.address.size() > 0
+            && hasValidLocation(request.resource.data.location)
+          )
+        );
 
       allow delete: if false;
     }
