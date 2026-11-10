@@ -1,6 +1,37 @@
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 
 import { getFirebaseAuth } from './firebase';
+import { addressFields, emptyAddress, normalizeAddress, validateAddress, type Address } from '../src/utils/address';
+
+export interface UserProfile {
+  displayName: string;
+  email: string;
+  whatsapp: string;
+  address?: Address;
+}
+
+export async function subscribeToUserProfile(
+  uid: string,
+  onProfile: (profile: UserProfile | null) => void,
+  onError: () => void,
+) {
+  const { doc, getFirestore, onSnapshot } = await import('firebase/firestore');
+  return onSnapshot(doc(getFirestore(getFirebaseAuth().app), 'users', uid), (snapshot) => {
+    if (!snapshot.exists()) {
+      onProfile(null);
+      return;
+    }
+    const data = snapshot.data();
+    onProfile({
+      displayName: typeof data.displayName === 'string' ? data.displayName : '',
+      email: typeof data.email === 'string' ? data.email : '',
+      whatsapp: typeof data.whatsapp === 'string' ? data.whatsapp : '',
+      address: Object.fromEntries(addressFields.map(([key]) => [
+        key, typeof data.address?.[key] === 'string' ? data.address[key] : '',
+      ])) as Address,
+    });
+  }, onError);
+}
 
 export function formatWhatsappInput(value: string): string {
   const digits = value.replace(/\D/g, '');
@@ -53,10 +84,15 @@ export async function registerUser(
   email: string,
   password: string,
   whatsapp: string,
-  location: { address: string; latitude: number; longitude: number }
+  address: Address = emptyAddress,
 ) {
+  const addressError = validateAddress(address);
+  if (addressError) throw new Error(addressError);
   const auth = getFirebaseAuth();
   const normalizedName = name.trim();
+  if (!normalizedName || normalizedName.length > 120) {
+    throw new Error('Informe um nome com até 120 caracteres.');
+  }
   const normalizedEmail = email.trim().toLowerCase();
   const currentUser = auth.currentUser;
   const user = currentUser?.email?.toLowerCase() === normalizedEmail
@@ -66,21 +102,37 @@ export async function registerUser(
   try {
     await updateProfile(user, { displayName: normalizedName });
     const { doc, getFirestore, serverTimestamp, setDoc } = await import('firebase/firestore');
-    await setDoc(doc(getFirestore(), 'users', user.uid), {
-      uid: user.uid,
+    await setDoc(doc(getFirestore(auth.app), 'users', credential.user.uid), {
+      uid: credential.user.uid,
       displayName: normalizedName,
       email: normalizedEmail,
       whatsapp,
-      address: location.address,
-      location: {
-        latitude: location.latitude,
-        longitude: location.longitude,
-      },
+      address: normalizeAddress(address),
       createdAt: serverTimestamp(),
     }, { merge: true });
   } catch (cause) {
     throw new UserProfileSaveError(cause);
   }
 
-  return user;
+  return credential.user;
+}
+
+export async function saveUserProfile(values: Pick<UserProfile, 'displayName' | 'whatsapp'> & { address: Address }) {
+  const auth = getFirebaseAuth();
+  const user = auth.currentUser;
+  if (!user) throw new Error('Entre na sua conta para editar o perfil.');
+  const displayName = values.displayName.trim();
+  if (!displayName || displayName.length > 120) throw new Error('Informe um nome com até 120 caracteres.');
+  const whatsapp = normalizeWhatsappNumber(values.whatsapp);
+  if (!whatsapp) throw new Error('Informe um WhatsApp válido com DDD.');
+  const addressError = validateAddress(values.address);
+  if (addressError) throw new Error(addressError);
+  const { doc, getFirestore, runTransaction, serverTimestamp } = await import('firebase/firestore');
+  const reference = doc(getFirestore(auth.app), 'users', user.uid);
+  await runTransaction(getFirestore(auth.app), async (transaction) => {
+    const snapshot = await transaction.get(reference);
+    const data = { displayName, whatsapp, address: normalizeAddress(values.address) };
+    if (snapshot.exists()) transaction.update(reference, data);
+    else transaction.set(reference, { ...data, uid: user.uid, email: user.email, createdAt: serverTimestamp() });
+  });
 }
