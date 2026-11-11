@@ -16,19 +16,22 @@ import { FilterType, HomeBookFilters } from "@/components/home/HomeBookFilters";
 import { HomeHeader } from "@/components/home/HomeHeader";
 import { AppColors } from "@/constants/colors";
 import { useBooks } from "@/contexts/books-context";
-import { BOOKS } from "@/mocks/books";
+import { useProfile } from "@/hooks/use-profile";
 import { Book } from "@/types/book";
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [books, setBooks] = useState<Book[]>(BOOKS);
+  const { books: nearbyBooks = [], setSelectedBook } = useBooks();
+  const { profile } = useProfile();
+  const [favoriteOverrides, setFavoriteOverrides] = useState<Record<string, boolean>>({});
+  const books = nearbyBooks.map((book) => ({
+    ...book, isFavorite: favoriteOverrides[book.id] ?? book.isFavorite,
+  }));
   const [filter, setFilter] = useState<FilterType>("all");
-  const { setSelectedBook } = useBooks();
 
   const toggleFavorite = (id: string) => {
-    setBooks((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, isFavorite: !b.isFavorite } : b)),
-    );
+    const book = books.find((item) => item.id === id);
+    if (book) setFavoriteOverrides((previous) => ({ ...previous, [id]: !book.isFavorite }));
   };
 
   const handlePress = (book: Book) => {
@@ -58,7 +61,9 @@ export default function HomeScreen() {
         <View style={styles.locationRow}>
           <Ionicons name="location-sharp" size={14} color={AppColors.blue} />
           <Text style={styles.locationText}>
-            Livros perto de Vila Mariana, São Paulo
+            {profile?.address?.city
+              ? `Livros perto de ${[profile.address.neighborhood, profile.address.city].filter(Boolean).join(', ')}`
+              : "Selecione sua localização em Meu perfil"}
           </Text>
         </View>
 

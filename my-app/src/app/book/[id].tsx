@@ -94,6 +94,7 @@ export default function BookDetailScreen() {
           <BookOwnerCard
             owner={book.owner}
             distance={book.distance}
+            distanceMeters={book.distanceMeters}
             ownerNeighborhood={book.ownerNeighborhood}
             ownerCity={book.ownerCity}
           />
