@@ -2,6 +2,25 @@
 
 O app usa o Firebase Authentication para criar contas com e-mail e senha. O nome é salvo no perfil do Authentication e o perfil, incluindo o WhatsApp, é salvo em `users/{uid}` no Cloud Firestore. O número é normalizado para E.164; se não houver código de país, o app assume Brasil (`+55`).
 
+## Localização e distância entre pessoas
+
+O cadastro e a edição salvam o ponto escolhido no mapa em `users/{uid}.coordinates`, no formato `{ latitude: number, longitude: number }`, ou `null` quando removido/não informado. Perfis antigos sem coordenadas continuam válidos. Publique novamente `database/firestore.rules` para permitir e validar esse campo. A localização é opcional e representa o ponto escolhido, sem rastreamento por GPS. Alterar o endereço textual não reposiciona o ponto automaticamente.
+
+`src/utils/distance.ts` expõe `calculateDistance(origin, destination)`, que retorna a distância em **metros**, usando Haversine, ou `null` se faltar um ponto válido. `formatDistance` apresenta metros ou quilômetros em português. Exemplo:
+
+```ts
+calculateDistance(
+  { latitude: -23.5505, longitude: -46.6333 },
+  { latitude: -22.9068, longitude: -43.1729 },
+); // aproximadamente 361.150 metros
+```
+
+O contexto de livros calcula a distância entre o perfil autenticado e `book.ownerCoordinates` e a fornece à página inicial e aos detalhes, em `distanceMeters` e `distance`. É uma estimativa em linha reta, não a extensão de uma rota de carro ou a pé. Na ausência de coordenadas, a interface mostra “Distância indisponível”.
+
+O catálogo inicial ainda utiliza `src/mocks/books.ts`, cujos donos não possuem coordenadas reais. Para exibir distâncias reais, a futura integração do catálogo deverá fornecer a localização autorizada de cada dono em `ownerCoordinates`, ou calcular a distância em um backend. Os perfis continuam privados: o cliente não recebe permissão para consultar a localização de outras contas. Nenhuma distância fixa do catálogo é usada como substituta do cálculo.
+
+Validação local: `node --experimental-strip-types --test tests/distance.test.mjs`. Com o Firebase configurado, escolha um ponto no cadastro, confira `coordinates` no Console, altere/remova pela edição e reabra o perfil para verificar a persistência. Para testar a interface com dois pontos conhecidos, adicione temporariamente `ownerCoordinates` a um livro simulado.
+
 ## Configuração
 
 1. Crie um projeto no [Firebase Console](https://console.firebase.google.com/) e adicione um app Web para obter os dados de configuração.
