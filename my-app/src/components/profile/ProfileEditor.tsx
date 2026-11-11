@@ -1,14 +1,22 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'expo-router';
 import { FirebaseError } from 'firebase/app';
 import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { AppColors } from '@/constants/colors';
 import { emptyAddress } from '@/utils/address';
+import { setAddressSelectionHandler, type SelectedLocation } from '@/utils/address-selection';
 import { AddressFields } from './AddressFields';
 import { saveUserProfile, type UserProfile } from '../../../database/users';
 
 type Props = { profile: UserProfile; onClose: () => void; onSaved: () => void };
 
 export function ProfileEditor({ profile, onClose, onSaved }: Props) {
+  const router = useRouter();
+  const [coordinates, setCoordinates] = useState<SelectedLocation | null>(profile.coordinates ?? null);
+  useEffect(() => {
+    setAddressSelectionHandler(setCoordinates);
+    return () => setAddressSelectionHandler(undefined);
+  }, []);
   const [name, setName] = useState(profile.displayName);
   const [whatsapp, setWhatsapp] = useState(profile.whatsapp);
   const [address, setAddress] = useState(profile.address ?? { ...emptyAddress });
@@ -20,7 +28,7 @@ export function ProfileEditor({ profile, onClose, onSaved }: Props) {
     setSaving(true);
     setError('');
     try {
-      await saveUserProfile({ displayName: name, whatsapp, address });
+      await saveUserProfile({ displayName: name, whatsapp, address, coordinates });
       onSaved();
     } catch (cause) {
       setError(cause instanceof FirebaseError
@@ -42,6 +50,16 @@ export function ProfileEditor({ profile, onClose, onSaved }: Props) {
       <TextInput accessibilityLabel="WhatsApp" style={styles.input} value={whatsapp} onChangeText={setWhatsapp} editable={!saving} keyboardType="phone-pad" />
       <Text style={styles.help}>E-mail: {profile.email}</Text>
       <AddressFields value={address} onChange={setAddress} disabled={saving} />
+      <TouchableOpacity accessibilityRole="button" style={styles.cancel} disabled={saving} onPress={() => router.push('/address-picker' as never)}>
+        <Text style={styles.label}>{coordinates ? 'Alterar localização no mapa' : 'Selecionar localização no mapa'}</Text>
+      </TouchableOpacity>
+      <Text style={styles.help}>A distância usa o local selecionado no mapa. Ao mudar de endereço, atualize também esse local.</Text>
+      {coordinates && <>
+        <Text style={styles.help}>{coordinates.latitude.toFixed(5)}, {coordinates.longitude.toFixed(5)}</Text>
+        <TouchableOpacity accessibilityRole="button" disabled={saving} onPress={() => setCoordinates(null)}>
+          <Text style={styles.label}>Remover localização</Text>
+        </TouchableOpacity>
+      </>}
       {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
       <TouchableOpacity accessibilityRole="button" style={styles.button} onPress={save} disabled={saving}>
         {saving ? <ActivityIndicator color={AppColors.white} /> : <Text style={styles.buttonText}>Salvar alterações</Text>}

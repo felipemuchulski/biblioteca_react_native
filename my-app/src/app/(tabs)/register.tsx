@@ -92,6 +92,7 @@ export default function RegisterScreen() {
         password,
         normalizedWhatsapp,
         address,
+        coordinates,
       );
       router.replace("/profile");
     } catch (cause) {
@@ -215,6 +216,7 @@ export default function RegisterScreen() {
             />
             <TouchableOpacity
               accessibilityRole="button"
+              disabled={submitting}
               onPress={() => router.push("/address-picker" as never)}
               style={styles.mapButton}
             >
@@ -230,6 +232,9 @@ export default function RegisterScreen() {
                 color={AppColors.graySecondary}
               />
             </TouchableOpacity>
+            <Text style={styles.coordinates}>
+              Opcional. Usaremos esse ponto para calcular distâncias em linha reta.
+            </Text>
             {coordinates ? (
               <Text style={styles.coordinates}>
                 Local selecionado: {coordinates.latitude.toFixed(5)},{" "}

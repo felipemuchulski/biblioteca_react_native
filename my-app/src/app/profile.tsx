@@ -82,6 +82,10 @@ export default function ProfileScreen() {
               <Text style={styles.label}>Endereço</Text>
               <Text selectable style={styles.value}>{formatAddress(profile?.address)}</Text>
               <Text style={styles.description}>Seu endereço completo fica visível apenas para você.</Text>
+              <Text style={styles.label}>Localização para calcular distâncias</Text>
+              <Text selectable style={styles.value}>{profile?.coordinates
+                ? `${profile.coordinates.latitude.toFixed(5)}, ${profile.coordinates.longitude.toFixed(5)}`
+                : 'Não informada'}</Text>
               <TouchableOpacity accessibilityRole="button" style={styles.button} onPress={() => { setEditing(true); setSaved(false); }}>
                 <Text style={styles.buttonText}>Editar perfil</Text>
               </TouchableOpacity>

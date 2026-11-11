@@ -1,6 +1,7 @@
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 
 import { getFirebaseAuth } from "./firebase";
+import { isValidCoordinates, type Coordinates } from "../src/utils/distance";
 import {
   addressFields,
   emptyAddress,
@@ -14,6 +15,7 @@ export interface UserProfile {
   email: string;
   whatsapp: string;
   address?: Address;
+  coordinates?: Coordinates | null;
 }
 
 export interface ViaCepAddress {
@@ -71,6 +73,7 @@ export async function subscribeToUserProfile(
           typeof data.displayName === "string" ? data.displayName : "",
         email: typeof data.email === "string" ? data.email : "",
         whatsapp: typeof data.whatsapp === "string" ? data.whatsapp : "",
+        coordinates: isValidCoordinates(data.coordinates) ? data.coordinates : null,
         address: Object.fromEntries(
           addressFields.map(([key]) => [
             key,
@@ -141,7 +144,11 @@ export async function registerUser(
   password: string,
   whatsapp: string,
   address: Address = emptyAddress,
+  coordinates: Coordinates | null = null,
 ) {
+  if (coordinates !== null && !isValidCoordinates(coordinates)) {
+    throw new Error("Selecione uma localização válida no mapa.");
+  }
   const addressError = validateAddress(address);
   if (addressError) throw new Error(addressError);
   const auth = getFirebaseAuth();
@@ -169,6 +176,7 @@ export async function registerUser(
         email: normalizedEmail,
         whatsapp,
         address: normalizeAddress(address),
+        coordinates: coordinates ? { latitude: coordinates.latitude, longitude: coordinates.longitude } : null,
         createdAt: serverTimestamp(),
       },
       { merge: true },
@@ -181,8 +189,11 @@ export async function registerUser(
 }
 
 export async function saveUserProfile(
-  values: Pick<UserProfile, "displayName" | "whatsapp"> & { address: Address },
+  values: Pick<UserProfile, "displayName" | "whatsapp" | "coordinates"> & { address: Address },
 ) {
+  if (values.coordinates != null && !isValidCoordinates(values.coordinates)) {
+    throw new Error("Selecione uma localização válida no mapa.");
+  }
   const auth = getFirebaseAuth();
   const user = auth.currentUser;
   if (!user) throw new Error("Entre na sua conta para editar o perfil.");
@@ -202,6 +213,11 @@ export async function saveUserProfile(
       displayName,
       whatsapp,
       address: normalizeAddress(values.address),
+      ...(values.coordinates !== undefined ? {
+        coordinates: values.coordinates ? {
+          latitude: values.coordinates.latitude, longitude: values.coordinates.longitude,
+        } : null,
+      } : {}),
     };
     if (snapshot.exists()) transaction.update(reference, data);
     else
