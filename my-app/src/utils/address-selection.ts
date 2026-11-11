@@ -1,7 +1,5 @@
-export type SelectedLocation = {
-  latitude: number;
-  longitude: number;
-};
+import type { Coordinates as SelectedLocation } from './distance';
+export type { Coordinates as SelectedLocation } from './distance';
 
 let selectionHandler: ((location: SelectedLocation) => void) | undefined;
 
