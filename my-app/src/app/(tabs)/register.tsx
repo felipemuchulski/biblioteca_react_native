@@ -17,7 +17,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppColors } from "@/constants/colors";
 import { AddressFields } from "@/components/profile/AddressFields";
-import { emptyAddress, validateAddress } from "@/utils/address";
+import { Address, emptyAddress, validateAddress } from "@/utils/address";
+import {
+  setAddressSelectionHandler,
+  type SelectedLocation,
+} from "@/utils/address-selection";
 import {
   formatWhatsappInput,
   normalizeWhatsappNumber,
@@ -30,13 +34,17 @@ export default function RegisterScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
-  const [address, setAddress] = useState("");
-  const [coordinates, setCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [coordinates, setCoordinates] = useState<SelectedLocation | null>(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [address, setAddress] = useState({ ...emptyAddress });
+  const [address, setAddress] = useState<Address>({ ...emptyAddress });
+
+  useEffect(() => {
+    setAddressSelectionHandler(setCoordinates);
+    return () => setAddressSelectionHandler(undefined);
+  }, []);
 
   const handleRegister = async () => {
     if (submitting) return;
@@ -78,12 +86,21 @@ export default function RegisterScreen() {
 
     setSubmitting(true);
     try {
-      await registerUser(name, email, password, normalizedWhatsapp, address);
+      await registerUser(
+        name,
+        email,
+        password,
+        normalizedWhatsapp,
+        address,
+      );
       router.replace("/profile");
     } catch (cause) {
       if (cause instanceof UserProfileSaveError) {
         const firestoreCause = cause.originalCause;
-        if (firestoreCause instanceof FirebaseError && firestoreCause.code === "permission-denied") {
+        if (
+          firestoreCause instanceof FirebaseError &&
+          firestoreCause.code === "permission-denied"
+        ) {
           setError(
             "O Firestore recusou os campos do perfil. Publique as regras atualizadas de database/firestore.rules e tente novamente; a conta já foi criada.",
           );
@@ -191,15 +208,10 @@ export default function RegisterScreen() {
               returnKeyType="next"
             />
 
-            <Text style={styles.label}>Endereço</Text>
-            <TextInput
-              autoCapitalize="words"
-              onChangeText={setAddress}
-              placeholder="Rua, número, bairro e cidade"
-              placeholderTextColor={AppColors.graySecondary}
-              style={styles.input}
+            <AddressFields
               value={address}
-              returnKeyType="next"
+              onChange={setAddress}
+              disabled={submitting}
             />
             <TouchableOpacity
               accessibilityRole="button"
@@ -208,13 +220,20 @@ export default function RegisterScreen() {
             >
               <Ionicons name="map-outline" size={20} color={AppColors.blue} />
               <Text style={styles.mapButtonText}>
-                {coordinates ? "Alterar localização no mapa" : "Selecionar localização no mapa"}
+                {coordinates
+                  ? `Latitude: ${coordinates.latitude.toFixed(5)}... | Longitude: ${coordinates.longitude.toFixed(5)}...`
+                  : "Selecionar localização no mapa"}
               </Text>
-              <Ionicons name="chevron-forward" size={18} color={AppColors.graySecondary} />
+              <Ionicons
+                name="chevron-forward"
+                size={18}
+                color={AppColors.graySecondary}
+              />
             </TouchableOpacity>
             {coordinates ? (
               <Text style={styles.coordinates}>
-                Local selecionado: {coordinates.latitude.toFixed(5)}, {coordinates.longitude.toFixed(5)}
+                Local selecionado: {coordinates.latitude.toFixed(5)},{" "}
+                {coordinates.longitude.toFixed(5)}
               </Text>
             ) : null}
 
@@ -251,8 +270,6 @@ export default function RegisterScreen() {
                 {error}
               </Text>
             ) : null}
-
-            <AddressFields value={address} onChange={setAddress} disabled={submitting} />
 
             <TouchableOpacity
               accessibilityRole="button"
