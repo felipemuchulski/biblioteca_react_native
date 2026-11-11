@@ -58,6 +58,27 @@ Publique novamente `database/firestore.rules` após esta alteração. As regras 
 
 ## Livros cadastrados e histórico de trocas
 
+### Arrays de livros no perfil
+
+Novos documentos `users/{uid}` são criados com `books: []` (livros cadastrados) e `likedBooks: []` (livros curtidos). Esses campos são arrays destinados a objetos de livros; os campos internos de cada objeto serão definidos no futuro cadastro. Exemplo de estrutura futura, apenas ilustrativo:
+
+```json
+{
+  "books": [{ "id": "livro-1", "title": "Torto Arado" }],
+  "likedBooks": [{ "id": "livro-2", "title": "O Pequeno Príncipe" }]
+}
+```
+
+As regras permitem criar e atualizar os arrays somente no perfil do próprio usuário e recusam campos `books`/`likedBooks` que não sejam listas (como texto, mapa ou `null`). Perfis antigos podem continuar sem esses campos e são lidos como listas vazias. A edição de nome/endereço não substitui as listas; repetir o cadastro de uma conta já autenticada também preserva os livros existentes. Se a edição precisar criar um perfil ausente, as duas listas são inicializadas vazias.
+
+Neste estágio, as regras validam o tipo externo `list`, sem validar o formato de cada item. As regras do Firestore não oferecem um laço genérico para verificar todos os elementos de uma lista; o contrato e a validação dos objetos precisarão acompanhar a implementação do cadastro de livros. A leitura pelo app aceita somente itens que sejam objetos.
+
+Esses arrays ainda não alimentam a página inicial, os favoritos ou `/profile-books`; essas integrações serão implementadas junto ao cadastro de livros. A coleção `books` descrita abaixo continua separada dos campos no perfil.
+
+Para ativar, publique o arquivo completo `database/firestore.rules` em **Firebase Console → Firestore Database → Regras**. As regras permitem os campos; é o código do cadastro que cria os arrays. Elas não adicionam campos automaticamente aos usuários antigos.
+
+Para validar, cadastre uma conta e confira os dois arrays vazios em `users/{uid}`. No simulador de regras, usando uma conta autenticada como dona do documento, confirme que atualizar com arrays de objetos é permitido e que texto/mapa/`null` são recusados. Uma conta diferente e uma requisição sem autenticação devem ser recusadas. Confira também que editar o perfil preserva listas preenchidas e que alterações de `uid`, `email` e `createdAt` continuam proibidas. O Console usa acesso administrativo e não serve para validar recusas das regras.
+
 As telas `/profile-books` e `/profile-trades` são acessíveis pelo perfil e consultam coleções reais do Firestore, em lotes de 20 com a opção Carregar mais. Não utilizam os livros simulados da página inicial.
 
 Contrato dos documentos:
