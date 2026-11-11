@@ -5,12 +5,13 @@ import { StyleSheet, Text, View } from "react-native";
 
 type BookOwnerCardProps = Pick<
   Book,
-  "owner" | "distance" | "ownerNeighborhood" | "ownerCity"
+  "owner" | "distance" | "distanceMeters" | "ownerNeighborhood" | "ownerCity"
 >;
 
 export function BookOwnerCard({
   owner,
   distance,
+  distanceMeters,
   ownerNeighborhood,
   ownerCity,
 }: BookOwnerCardProps) {
@@ -19,7 +20,7 @@ export function BookOwnerCard({
     .filter(Boolean)
     .join(", ");
 
-  if (!formattedOwnerName || !formattedLocation) return null;
+  if (!owner) return null;
 
   return (
     <View>
@@ -38,7 +39,9 @@ export function BookOwnerCard({
           <Ionicons name="location-outline" size={20} color={AppColors.blue} />
           <View style={{ flex: 1 }}>
             <Text style={styles.distance}>
-              A aproximadamente {distance} de você
+              {distanceMeters != null
+                ? `A aproximadamente ${distance} de você (em linha reta)`
+                : 'Distância indisponível'}
             </Text>
             {formattedLocation && (
               <Text style={styles.place}>{formattedLocation}</Text>

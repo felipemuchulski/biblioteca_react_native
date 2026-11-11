@@ -1,6 +1,7 @@
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 
 import { getFirebaseAuth } from "./firebase";
+import { isValidCoordinates, type Coordinates } from "../src/utils/distance";
 import {
   addressFields,
   emptyAddress,
@@ -9,11 +10,24 @@ import {
   type Address,
 } from "../src/utils/address";
 
+// O contrato dos campos do livro será definido no futuro cadastro de livros.
+export type UserBook = Record<string, unknown>;
+
+function readUserBooks(value: unknown): UserBook[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((book): book is UserBook =>
+    book !== null && typeof book === "object" && !Array.isArray(book),
+  );
+}
+
 export interface UserProfile {
   displayName: string;
   email: string;
   whatsapp: string;
   address?: Address;
+  coordinates?: Coordinates | null;
+  books?: UserBook[];
+  likedBooks?: UserBook[];
 }
 
 export interface ViaCepAddress {
@@ -71,6 +85,9 @@ export async function subscribeToUserProfile(
           typeof data.displayName === "string" ? data.displayName : "",
         email: typeof data.email === "string" ? data.email : "",
         whatsapp: typeof data.whatsapp === "string" ? data.whatsapp : "",
+        coordinates: isValidCoordinates(data.coordinates) ? data.coordinates : null,
+        books: readUserBooks(data.books),
+        likedBooks: readUserBooks(data.likedBooks),
         address: Object.fromEntries(
           addressFields.map(([key]) => [
             key,
@@ -141,7 +158,11 @@ export async function registerUser(
   password: string,
   whatsapp: string,
   address: Address = emptyAddress,
+  coordinates: Coordinates | null = null,
 ) {
+  if (coordinates !== null && !isValidCoordinates(coordinates)) {
+    throw new Error("Selecione uma localização válida no mapa.");
+  }
   const addressError = validateAddress(address);
   if (addressError) throw new Error(addressError);
   const auth = getFirebaseAuth();
@@ -159,20 +180,30 @@ export async function registerUser(
 
   try {
     await updateProfile(user, { displayName: normalizedName });
-    const { doc, getFirestore, serverTimestamp, setDoc } =
+    const { doc, getFirestore, serverTimestamp, runTransaction } =
       await import("firebase/firestore");
-    await setDoc(
-      doc(getFirestore(auth.app), "users", user.uid),
-      {
-        uid: user.uid,
+    const firestore = getFirestore(auth.app);
+    const reference = doc(firestore, "users", user.uid);
+    await runTransaction(firestore, async (transaction) => {
+      const snapshot = await transaction.get(reference);
+      const existing = snapshot.data() ?? {};
+      const data = {
         displayName: normalizedName,
-        email: normalizedEmail,
         whatsapp,
         address: normalizeAddress(address),
+        coordinates: coordinates ? { latitude: coordinates.latitude, longitude: coordinates.longitude } : null,
+        // Uma nova tentativa de cadastro não deve apagar livros já existentes.
+        ...(!('books' in existing) ? { books: [] } : {}),
+        ...(!('likedBooks' in existing) ? { likedBooks: [] } : {}),
+      };
+      if (snapshot.exists()) transaction.update(reference, data);
+      else transaction.set(reference, {
+        ...data,
+        uid: user.uid,
+        email: normalizedEmail,
         createdAt: serverTimestamp(),
-      },
-      { merge: true },
-    );
+      });
+    });
   } catch (cause) {
     throw new UserProfileSaveError(cause);
   }
@@ -181,8 +212,11 @@ export async function registerUser(
 }
 
 export async function saveUserProfile(
-  values: Pick<UserProfile, "displayName" | "whatsapp"> & { address: Address },
+  values: Pick<UserProfile, "displayName" | "whatsapp" | "coordinates"> & { address: Address },
 ) {
+  if (values.coordinates != null && !isValidCoordinates(values.coordinates)) {
+    throw new Error("Selecione uma localização válida no mapa.");
+  }
   const auth = getFirebaseAuth();
   const user = auth.currentUser;
   if (!user) throw new Error("Entre na sua conta para editar o perfil.");
@@ -202,6 +236,11 @@ export async function saveUserProfile(
       displayName,
       whatsapp,
       address: normalizeAddress(values.address),
+      ...(values.coordinates !== undefined ? {
+        coordinates: values.coordinates ? {
+          latitude: values.coordinates.latitude, longitude: values.coordinates.longitude,
+        } : null,
+      } : {}),
     };
     if (snapshot.exists()) transaction.update(reference, data);
     else
@@ -209,6 +248,8 @@ export async function saveUserProfile(
         ...data,
         uid: user.uid,
         email: user.email,
+        books: [],
+        likedBooks: [],
         createdAt: serverTimestamp(),
       });
   });

@@ -27,23 +27,42 @@ service cloud.firestore {
       );
     }
 
+    function validCoordinates(data) {
+      return !('coordinates' in data) || data.coordinates == null || (
+        data.coordinates is map
+        && data.coordinates.keys().hasAll(['latitude', 'longitude'])
+        && data.coordinates.keys().hasOnly(['latitude', 'longitude'])
+        && data.coordinates.latitude is number
+        && data.coordinates.longitude is number
+        && data.coordinates.latitude >= -90 && data.coordinates.latitude <= 90
+        && data.coordinates.longitude >= -180 && data.coordinates.longitude <= 180
+      );
+    }
+
+    // Campos opcionais para manter compatibilidade com perfis antigos.
+    // O formato de cada objeto será definido no fluxo de cadastro de livros.
+    function validBookLists(data) {
+      return (!('books' in data) || data.books is list)
+        && (!('likedBooks' in data) || data.likedBooks is list);
+    }
+
     function validProfile(data) {
       return validText(data.displayName) && data.displayName.size() > 0
         && data.whatsapp is string && data.whatsapp.matches('^\\+[1-9][0-9]{7,14}$')
-        && validAddress(data);
+        && validAddress(data) && validCoordinates(data) && validBookLists(data);
     }
 
     match /users/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null && request.auth.uid == userId
-        && request.resource.data.keys().hasOnly(['uid', 'displayName', 'email', 'whatsapp', 'address', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['uid', 'displayName', 'email', 'whatsapp', 'address', 'coordinates', 'books', 'likedBooks', 'createdAt'])
         && request.resource.data.keys().hasAll(['uid', 'displayName', 'email', 'whatsapp', 'createdAt'])
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.createdAt == request.time
         && validProfile(request.resource.data);
       allow update: if request.auth != null && request.auth.uid == userId
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'whatsapp', 'address'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'whatsapp', 'address', 'coordinates', 'books', 'likedBooks'])
         && validProfile(request.resource.data);
       allow delete: if false;
     }

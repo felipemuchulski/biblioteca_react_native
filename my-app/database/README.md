@@ -2,6 +2,25 @@
 
 O app usa o Firebase Authentication para criar contas com e-mail e senha. O nome é salvo no perfil do Authentication e o perfil, incluindo o WhatsApp, é salvo em `users/{uid}` no Cloud Firestore. O número é normalizado para E.164; se não houver código de país, o app assume Brasil (`+55`).
 
+## Localização e distância entre pessoas
+
+O cadastro e a edição salvam o ponto escolhido no mapa em `users/{uid}.coordinates`, no formato `{ latitude: number, longitude: number }`, ou `null` quando removido/não informado. Perfis antigos sem coordenadas continuam válidos. Publique novamente `database/firestore.rules` para permitir e validar esse campo. A localização é opcional e representa o ponto escolhido, sem rastreamento por GPS. Alterar o endereço textual não reposiciona o ponto automaticamente.
+
+`src/utils/distance.ts` expõe `calculateDistance(origin, destination)`, que retorna a distância em **metros**, usando Haversine, ou `null` se faltar um ponto válido. `formatDistance` apresenta metros ou quilômetros em português. Exemplo:
+
+```ts
+calculateDistance(
+  { latitude: -23.5505, longitude: -46.6333 },
+  { latitude: -22.9068, longitude: -43.1729 },
+); // aproximadamente 361.150 metros
+```
+
+O contexto de livros calcula a distância entre o perfil autenticado e `book.ownerCoordinates` e a fornece à página inicial e aos detalhes, em `distanceMeters` e `distance`. É uma estimativa em linha reta, não a extensão de uma rota de carro ou a pé. Na ausência de coordenadas, a interface mostra “Distância indisponível”.
+
+O catálogo inicial ainda utiliza `src/mocks/books.ts`, cujos donos não possuem coordenadas reais. Para exibir distâncias reais, a futura integração do catálogo deverá fornecer a localização autorizada de cada dono em `ownerCoordinates`, ou calcular a distância em um backend. Os perfis continuam privados: o cliente não recebe permissão para consultar a localização de outras contas. Nenhuma distância fixa do catálogo é usada como substituta do cálculo.
+
+Validação local: `node --experimental-strip-types --test tests/distance.test.mjs`. Com o Firebase configurado, escolha um ponto no cadastro, confira `coordinates` no Console, altere/remova pela edição e reabra o perfil para verificar a persistência. Para testar a interface com dois pontos conhecidos, adicione temporariamente `ownerCoordinates` a um livro simulado.
+
 ## Configuração
 
 1. Crie um projeto no [Firebase Console](https://console.firebase.google.com/) e adicione um app Web para obter os dados de configuração.
@@ -38,6 +57,27 @@ Em Meu perfil → Editar perfil, o usuário pode alterar nome, WhatsApp e endere
 Publique novamente `database/firestore.rules` após esta alteração. As regras validam os campos e mantêm o endereço completo restrito ao próprio usuário.
 
 ## Livros cadastrados e histórico de trocas
+
+### Arrays de livros no perfil
+
+Novos documentos `users/{uid}` são criados com `books: []` (livros cadastrados) e `likedBooks: []` (livros curtidos). Esses campos são arrays destinados a objetos de livros; os campos internos de cada objeto serão definidos no futuro cadastro. Exemplo de estrutura futura, apenas ilustrativo:
+
+```json
+{
+  "books": [{ "id": "livro-1", "title": "Torto Arado" }],
+  "likedBooks": [{ "id": "livro-2", "title": "O Pequeno Príncipe" }]
+}
+```
+
+As regras permitem criar e atualizar os arrays somente no perfil do próprio usuário e recusam campos `books`/`likedBooks` que não sejam listas (como texto, mapa ou `null`). Perfis antigos podem continuar sem esses campos e são lidos como listas vazias. A edição de nome/endereço não substitui as listas; repetir o cadastro de uma conta já autenticada também preserva os livros existentes. Se a edição precisar criar um perfil ausente, as duas listas são inicializadas vazias.
+
+Neste estágio, as regras validam o tipo externo `list`, sem validar o formato de cada item. As regras do Firestore não oferecem um laço genérico para verificar todos os elementos de uma lista; o contrato e a validação dos objetos precisarão acompanhar a implementação do cadastro de livros. A leitura pelo app aceita somente itens que sejam objetos.
+
+Esses arrays ainda não alimentam a página inicial, os favoritos ou `/profile-books`; essas integrações serão implementadas junto ao cadastro de livros. A coleção `books` descrita abaixo continua separada dos campos no perfil.
+
+Para ativar, publique o arquivo completo `database/firestore.rules` em **Firebase Console → Firestore Database → Regras**. As regras permitem os campos; é o código do cadastro que cria os arrays. Elas não adicionam campos automaticamente aos usuários antigos.
+
+Para validar, cadastre uma conta e confira os dois arrays vazios em `users/{uid}`. No simulador de regras, usando uma conta autenticada como dona do documento, confirme que atualizar com arrays de objetos é permitido e que texto/mapa/`null` são recusados. Uma conta diferente e uma requisição sem autenticação devem ser recusadas. Confira também que editar o perfil preserva listas preenchidas e que alterações de `uid`, `email` e `createdAt` continuam proibidas. O Console usa acesso administrativo e não serve para validar recusas das regras.
 
 As telas `/profile-books` e `/profile-trades` são acessíveis pelo perfil e consultam coleções reais do Firestore, em lotes de 20 com a opção Carregar mais. Não utilizam os livros simulados da página inicial.
 
