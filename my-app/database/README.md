@@ -31,7 +31,7 @@ A visualização depende da sessão disponível no Firebase Authentication; o lo
 
 ## Endereço e edição
 
-O cadastro aceita endereço opcional: CEP, rua, número (ou S/N), complemento, bairro, cidade e UF. Se algum campo for preenchido, o endereço deve estar completo, exceto o complemento. O CEP é salvo com 8 dígitos e a UF em maiúsculas, dentro do mapa `address` do perfil. Perfis antigos sem esse mapa continuam funcionando.
+O cadastro e a edição de perfil aceitam endereço opcional: CEP, rua, número (ou S/N), complemento, bairro, cidade e UF. Ao completar o CEP, os campos disponíveis são consultados no ViaCEP. Se algum campo for preenchido, o endereço deve estar completo, exceto o complemento. O CEP é salvo com 8 dígitos e a UF em maiúsculas, dentro do mapa `address` do perfil. Perfis antigos sem esse mapa continuam funcionando.
 
 Em Meu perfil → Editar perfil, o usuário pode alterar nome, WhatsApp e endereço, salvar ou cancelar. O e-mail permanece somente para leitura. O nome exibido no app vem do Firestore; o nome do Authentication é definido durante o cadastro. Se a conta foi criada sem o documento de perfil, salvar a edição também cria esse documento.
 

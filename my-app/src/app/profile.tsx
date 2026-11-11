@@ -1,11 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, Stack } from 'expo-router';
+import { signOut } from 'firebase/auth';
 import { useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { AppColors } from '@/constants/colors';
 import { useProfile } from '@/hooks/use-profile';
 import { formatWhatsappInput } from '../../database/users';
+import { getFirebaseAuth } from '../../database/firebase';
 import { formatAddress } from '@/utils/address';
 import { ProfileEditor } from '@/components/profile/ProfileEditor';
 
@@ -15,6 +17,18 @@ export default function ProfileScreen() {
   const whatsapp = profile?.whatsapp;
   const [editing, setEditing] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [logoutError, setLogoutError] = useState('');
+
+  const handleLogout = async () => {
+    setLogoutError('');
+    try {
+      await signOut(getFirebaseAuth());
+    } catch (cause) {
+      setLogoutError(
+        cause instanceof Error ? cause.message : 'Não foi possível sair da conta.',
+      );
+    }
+  };
 
   return (
     <>
@@ -80,6 +94,14 @@ export default function ProfileScreen() {
               <Link href="./profile-books" style={styles.navigation}>Meus livros cadastrados →</Link>
               <Link href="./profile-trades" style={styles.navigation}>Histórico de trocas →</Link>
             </View>
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={() => void handleLogout()}
+              style={styles.logoutButton}
+            >
+              <Text style={styles.logoutText}>Sair da conta</Text>
+            </TouchableOpacity>
+            {!!logoutError && <Text accessibilityRole="alert" style={styles.error}>{logoutError}</Text>}
           </>
         )}
       </ScrollView>
@@ -103,4 +125,6 @@ const styles = StyleSheet.create({
   button: { backgroundColor: AppColors.blue, padding: 16, borderRadius: 12, textAlign: 'center', alignItems: 'center', marginTop: 12 },
   buttonText: { color: AppColors.white, fontWeight: '700', fontSize: 16 },
   navigation: { color: AppColors.blue, fontSize: 16, paddingVertical: 14, fontWeight: '600' },
+  logoutButton: { borderColor: '#B42318', borderWidth: 1, borderRadius: 12, padding: 16, alignItems: 'center' },
+  logoutText: { color: '#B42318', fontWeight: '700', fontSize: 16 },
 });
