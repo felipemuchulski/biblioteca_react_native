@@ -1,4 +1,4 @@
-import { Link, Stack } from "expo-router";
+import { Link } from "expo-router";
 import {
   ActivityIndicator,
   FlatList,
@@ -80,11 +80,8 @@ export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
   } = useProfile();
   const { records, loading, error, hasMore, retry, loadMore } =
     useProfileRecords(user?.uid, kind);
-  const title =
-    kind === "books" ? "Meus livros cadastrados" : "Histórico de trocas";
   return (
     <>
-      <Stack.Screen options={{ title, headerShown: true }} />
       <FlatList
         style={styles.screen}
         contentContainerStyle={styles.content}

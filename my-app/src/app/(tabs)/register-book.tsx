@@ -1,10 +1,11 @@
 import { BookHeader } from "@/components/book-details/BookHeader";
 import { ConditionSelector } from "@/components/book-register/ConditionSelector";
 import { BookFormField } from "@/components/book-register/BookFormField";
+import { BookTypeSelector } from "@/components/book-register/BookTypeSelector";
 import { PhotoPicker } from "@/components/book-register/PhotoPicker";
 import { ConfirmBookRegisterButton } from "@/components/book-register/ConfirmBookRegisterButton";
 import { AppColors } from "@/constants/colors";
-import type { BookCondition } from "@/types/book";
+import type { BookCondition, BookType } from "@/types/book";
 import { Ionicons } from "@expo/vector-icons";
 import { getFirebaseAuth } from "../../../database/firebase";
 import { registerBook } from "../../../database/books";
@@ -25,7 +26,7 @@ import {
 } from "react-native-safe-area-context";
 
 type FormErrors = Partial<
-  Record<"title" | "author" | "photos" | "condition", string>
+  Record<"title" | "author" | "photos" | "condition" | "type", string>
 >;
 
 export type NewBookInput = {
@@ -34,6 +35,7 @@ export type NewBookInput = {
   images: string[];
   thumbnail: string;
   category: string[];
+  type: BookType;
   condition: BookCondition;
   conditionNote?: string;
   tradeWithBookId?: string;
@@ -58,6 +60,7 @@ export default function NewBookScreen() {
   const [author, setAuthor] = useState("");
   const [categories, setCategories] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
+  const [bookType, setBookType] = useState<BookType | null>(null);
   const [condition, setCondition] = useState<BookCondition | null>(null);
   const [conditionNote, setConditionNote] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
@@ -71,6 +74,7 @@ export default function NewBookScreen() {
     if (!title.trim()) next.title = "Informe o título do livro.";
     if (!author.trim()) next.author = "Informe o autor.";
     if (photos.length === 0) next.photos = "Adicione pelo menos uma foto.";
+    if (!bookType) next.type = "Escolha se o livro será trocado ou doado.";
     if (!condition) next.condition = "Selecione a condição do livro.";
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -106,7 +110,7 @@ export default function NewBookScreen() {
       return;
     }
 
-    if (!validate() || !condition) return;
+    if (!validate() || !bookType || !condition) return;
 
     const payload: NewBookInput = {
       title: title.trim(),
@@ -114,6 +118,7 @@ export default function NewBookScreen() {
       images: photos,
       thumbnail: photos[0],
       category: parseCategories(categories),
+      type: bookType,
       condition,
       conditionNote: conditionNote.trim() || undefined,
       tradeWithBookId: relatedBookId,
@@ -193,6 +198,14 @@ export default function NewBookScreen() {
               value={categories}
               onChangeText={setCategories}
               autoCapitalize="sentences"
+            />
+            <BookTypeSelector
+              value={bookType}
+              onChange={(value) => {
+                setBookType(value);
+                clearError("type");
+              }}
+              error={errors.type}
             />
           </View>
 

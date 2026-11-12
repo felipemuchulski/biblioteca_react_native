@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Link, Stack } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { useState } from "react";
 import {
@@ -22,6 +22,7 @@ import { formatAddress } from "@/utils/address";
 import { ProfileEditor } from "@/components/profile/ProfileEditor";
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { loading, user, profile, error, retry } = useProfile();
   const name = profile?.displayName || user?.displayName || "Seu perfil";
   const whatsapp = profile?.whatsapp;
@@ -57,6 +58,7 @@ export default function ProfileScreen() {
         loginEmail.trim().toLowerCase(),
         loginPassword,
       );
+      router.replace("/");
     } catch {
       setLoginError("E-mail ou senha incorretos");
     } finally {
@@ -66,7 +68,6 @@ export default function ProfileScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: "Meu perfil", headerShown: true }} />
       <KeyboardAvoidingView
         style={styles.screen}
         behavior={Platform.OS === "ios" ? "padding" : undefined}

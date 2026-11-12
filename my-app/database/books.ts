@@ -1,6 +1,6 @@
 import { getFirestore } from "firebase/firestore";
 
-import type { BookCondition } from "../src/types/book";
+import type { BookCondition, BookType } from "../src/types/book";
 import { getFirebaseAuth } from "./firebase";
 
 export type RegisterBookInput = {
@@ -9,6 +9,7 @@ export type RegisterBookInput = {
   images: string[];
   thumbnail: string;
   category: string[];
+  type: BookType;
   condition: BookCondition;
   conditionNote?: string;
   tradeWithBookId?: string;
@@ -21,7 +22,13 @@ export async function registerBook(input: RegisterBookInput): Promise<string> {
 
   const title = input.title.trim();
   const author = input.author.trim();
-  if (!title || !author || input.images.length === 0 || !input.condition) {
+  if (
+    !title ||
+    !author ||
+    input.images.length === 0 ||
+    !input.type ||
+    !input.condition
+  ) {
     throw new Error("Preencha todos os campos obrigatórios do livro.");
   }
 
@@ -41,7 +48,7 @@ export async function registerBook(input: RegisterBookInput): Promise<string> {
     images: input.images,
     thumbnail: input.thumbnail,
     category: input.category,
-    type: "exchange",
+    type: input.type,
     available: true,
     bookCondition: input.condition,
     ...(conditionNote ? { bookConditionNote: conditionNote } : {}),
