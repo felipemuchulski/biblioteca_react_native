@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link, Stack } from "expo-router";
-import { signOut } from "firebase/auth";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -9,6 +9,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -27,6 +28,10 @@ export default function ProfileScreen() {
   const [editing, setEditing] = useState(false);
   const [saved, setSaved] = useState(false);
   const [logoutError, setLogoutError] = useState("");
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loginSubmitting, setLoginSubmitting] = useState(false);
 
   const handleLogout = async () => {
     setLogoutError("");
@@ -38,6 +43,24 @@ export default function ProfileScreen() {
           ? cause.message
           : "Não foi possível sair da conta.",
       );
+    }
+  };
+
+  const handleLogin = async () => {
+    if (loginSubmitting) return;
+
+    setLoginError("");
+    setLoginSubmitting(true);
+    try {
+      await signInWithEmailAndPassword(
+        getFirebaseAuth(),
+        loginEmail.trim().toLowerCase(),
+        loginPassword,
+      );
+    } catch {
+      setLoginError("E-mail ou senha incorretos");
+    } finally {
+      setLoginSubmitting(false);
     }
   };
 
@@ -65,10 +88,47 @@ export default function ProfileScreen() {
                 size={64}
                 color={AppColors.blue}
               />
-              <Text style={styles.title}>Crie seu perfil</Text>
+              <Text style={styles.title}>Seu perfil</Text>
               <Text style={styles.description}>
-                Cadastre-se para ter seu perfil na comunidade Livroei.
+                Faça o login ou cadastre-se para ter acesso ao seu perfil na
+                comunidade Livroei.
               </Text>
+              <Text style={styles.label}>E-mail</Text>
+              <TextInput
+                autoCapitalize="none"
+                autoComplete="email"
+                keyboardType="email-address"
+                onChangeText={setLoginEmail}
+                placeholder="voce@exemplo.com"
+                placeholderTextColor={AppColors.graySecondary}
+                style={styles.input}
+                value={loginEmail}
+              />
+              <Text style={styles.label}>Senha</Text>
+              <TextInput
+                autoCapitalize="none"
+                autoComplete="password"
+                onChangeText={setLoginPassword}
+                placeholder="Digite sua senha"
+                placeholderTextColor={AppColors.graySecondary}
+                secureTextEntry
+                style={styles.input}
+                value={loginPassword}
+                onSubmitEditing={() => void handleLogin()}
+              />
+              {!!loginError && (
+                <Text accessibilityRole="alert" style={styles.error}>
+                  {loginError}
+                </Text>
+              )}
+              <TouchableOpacity
+                disabled={loginSubmitting}
+                onPress={() => void handleLogin()}
+                style={[styles.loginButton, loginSubmitting && styles.disabled]}
+              >
+                <Text style={styles.loginButtonText}>Entrar</Text>
+              </TouchableOpacity>
+              <Text style={styles.accountPrompt}>Ainda não possui uma conta?</Text>
               <Link href="/register-user" style={styles.button}>
                 <Text style={styles.buttonText}>Criar perfil</Text>
               </Link>
@@ -210,6 +270,11 @@ const styles = StyleSheet.create({
   label: { fontSize: 13, fontWeight: "600", color: AppColors.categoryText },
   value: { fontSize: 17, color: AppColors.darkBlue, marginBottom: 12 },
   error: { color: "#B42318", lineHeight: 22 },
+  accountPrompt: {
+    color: AppColors.categoryText,
+    textAlign: "center",
+    marginTop: 8,
+  },
   button: {
     backgroundColor: AppColors.blue,
     padding: 16,
@@ -219,6 +284,25 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   buttonText: { color: AppColors.white, fontWeight: "700", fontSize: 16 },
+  input: {
+    minHeight: 52,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    fontSize: 16,
+    color: AppColors.darkBlue,
+    marginBottom: 4,
+  },
+  loginButton: {
+    borderColor: AppColors.blue,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+  },
+  loginButtonText: { color: AppColors.blue, fontWeight: "700", fontSize: 16 },
+  disabled: { opacity: 0.5 },
   navigation: {
     color: AppColors.blue,
     fontSize: 16,
