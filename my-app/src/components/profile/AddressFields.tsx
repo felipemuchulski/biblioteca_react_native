@@ -8,7 +8,9 @@ type Props = { value: Address; onChange: (value: Address) => void; disabled?: bo
 
 export function AddressFields({ value, onChange, disabled }: Props) {
   const [postalCodeError, setPostalCodeError] = useState('');
+  const [lookingUpPostalCode, setLookingUpPostalCode] = useState(false);
   const requestId = useRef(0);
+  const editedWhileLookingUp = useRef(new Set<keyof Address>());
   const latestValue = useRef(value);
   latestValue.current = value;
 
@@ -19,34 +21,50 @@ export function AddressFields({ value, onChange, disabled }: Props) {
       : digits;
     onChange({ ...value, postalCode: formatted });
     setPostalCodeError('');
+    setLookingUpPostalCode(false);
+    editedWhileLookingUp.current.clear();
+    const currentRequestId = ++requestId.current;
 
     if (digits.length !== 8) return;
 
-    const currentRequestId = ++requestId.current;
+    setLookingUpPostalCode(true);
     void fetchAddressByPostalCode(digits)
       .then((address) => {
         if (currentRequestId !== requestId.current) return;
-        onChange({
+        const updatedAddress: Address = {
           ...latestValue.current,
           postalCode: formatted,
           street: address.logradouro,
           neighborhood: address.bairro,
           city: address.localidade,
           state: address.uf,
-        });
+        };
+        for (const key of editedWhileLookingUp.current) {
+          updatedAddress[key] = latestValue.current[key];
+        }
+        onChange(updatedAddress);
       })
       .catch((cause: unknown) => {
         if (currentRequestId !== requestId.current) return;
         setPostalCodeError(
           cause instanceof Error ? cause.message : 'Não foi possível consultar o CEP.',
         );
+      })
+      .finally(() => {
+        if (currentRequestId === requestId.current) setLookingUpPostalCode(false);
       });
+  };
+
+  const handleFieldChange = (key: keyof Address, text: string) => {
+    if (lookingUpPostalCode) editedWhileLookingUp.current.add(key);
+    onChange({ ...value, [key]: key === 'state' ? text.toUpperCase() : text });
   };
 
   return (
     <View style={styles.fields}>
       <Text style={styles.title}>Endereço</Text>
       <Text style={styles.help}>Opcional. Seu endereço completo fica visível apenas para você.</Text>
+      {lookingUpPostalCode ? <Text style={styles.help}>Buscando endereço pelo CEP...</Text> : null}
       {addressFields.map(([key, label]) => (
         <View key={key} style={styles.field}>
           <Text style={styles.label}>{label}</Text>
@@ -56,7 +74,7 @@ export function AddressFields({ value, onChange, disabled }: Props) {
             editable={!disabled}
             onChangeText={(text) => key === 'postalCode'
               ? handlePostalCodeChange(text)
-              : onChange({ ...value, [key]: key === 'state' ? text.toUpperCase() : text })}
+              : handleFieldChange(key, text)}
             keyboardType={key === 'postalCode' ? 'number-pad' : 'default'}
             autoCapitalize={key === 'state' ? 'characters' : 'words'}
             maxLength={key === 'state' ? 2 : key === 'postalCode' ? 9 : 120}
