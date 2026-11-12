@@ -29,7 +29,7 @@ import {
   UserProfileSaveError,
 } from "../../../database/users";
 
-export default function RegisterScreen() {
+export default function RegisterUserScreen() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -233,7 +233,8 @@ export default function RegisterScreen() {
               />
             </TouchableOpacity>
             <Text style={styles.coordinates}>
-              Opcional. Usaremos esse ponto para calcular distâncias em linha reta.
+              Opcional. Usaremos esse ponto para calcular distâncias em linha
+              reta.
             </Text>
             {coordinates ? (
               <Text style={styles.coordinates}>

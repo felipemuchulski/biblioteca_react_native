@@ -6,6 +6,7 @@ export default function RootLayout() {
     <BooksProvider>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="book-register" options={{ headerShown: false }} />
         <Stack.Screen name="book/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="address-picker" options={{ headerShown: false }} />
       </Stack>

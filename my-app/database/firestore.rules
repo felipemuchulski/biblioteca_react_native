@@ -52,6 +52,33 @@ service cloud.firestore {
         && validAddress(data) && validCoordinates(data) && validBookLists(data);
     }
 
+    function validBook(data) {
+      return data.keys().hasOnly([
+          'ownerId', 'owner', 'title', 'author', 'images', 'thumbnail',
+          'category', 'type', 'available', 'bookCondition',
+          'bookConditionNote', 'tradeWithBookId', 'createdAt'
+        ])
+        && data.keys().hasAll([
+          'ownerId', 'owner', 'title', 'author', 'images', 'thumbnail',
+          'category', 'type', 'available', 'bookCondition', 'createdAt'
+        ])
+        && data.ownerId == request.auth.uid
+        && validText(data.owner) && data.owner.size() > 0
+        && validText(data.title) && data.title.size() > 0
+        && validText(data.author) && data.author.size() > 0
+        && data.images is list && data.images.size() > 0
+        && data.thumbnail is string && data.thumbnail.size() > 0
+        && data.category is list
+        && data.type in ['donation', 'exchange', 'pagination']
+        && data.available is bool
+        && data.bookCondition in ['new', 'like_new', 'good', 'worn']
+        && (!('bookConditionNote' in data)
+          || (data.bookConditionNote is string && data.bookConditionNote.size() <= 300))
+        && (!('tradeWithBookId' in data)
+          || (data.tradeWithBookId is string && data.tradeWithBookId.size() <= 120))
+        && data.createdAt == request.time;
+    }
+
     match /users/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null && request.auth.uid == userId
@@ -69,7 +96,8 @@ service cloud.firestore {
 
     match /books/{bookId} {
       allow read: if request.auth != null && resource.data.ownerId == request.auth.uid;
-      allow write: if false;
+      allow create: if request.auth != null && validBook(request.resource.data);
+      allow update, delete: if false;
     }
 
     match /trades/{tradeId} {
