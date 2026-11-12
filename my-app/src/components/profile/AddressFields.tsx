@@ -57,8 +57,8 @@ export function AddressFields({ value, onChange, disabled }: Props) {
             onChangeText={(text) => key === 'postalCode'
               ? handlePostalCodeChange(text)
               : onChange({ ...value, [key]: key === 'state' ? text.toUpperCase() : text })}
-            keyboardType={key === 'postalCode' ? 'number-pad' : 'default'}
-            autoCapitalize={key === 'state' ? 'characters' : 'words'}
+            keyboardType={key === 'postalCode' || key === 'number' ? 'number-pad' : 'default'}
+            autoCapitalize={key === 'state' ? 'characters' : key === 'number' ? 'none' : 'words'}
             maxLength={key === 'state' ? 2 : key === 'postalCode' ? 9 : 120}
             placeholder={key === 'postalCode' ? '00000-000' : key === 'complement' ? 'Opcional' : label}
             placeholderTextColor={AppColors.graySecondary}

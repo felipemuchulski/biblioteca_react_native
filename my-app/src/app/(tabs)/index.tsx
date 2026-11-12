@@ -85,7 +85,11 @@ export default function HomeScreen() {
           <Text style={styles.bannerTitle}>
             Dê espaço na estante.{"\n"}Ganhe uma nova conversa.
           </Text>
-          <TouchableOpacity style={styles.bannerBtn} activeOpacity={0.8}>
+          <TouchableOpacity
+            style={styles.bannerBtn}
+            activeOpacity={0.8}
+            onPress={() => router.push("/book-register")}
+          >
             <Text style={styles.bannerBtnText}>Cadastrar um livro</Text>
             <Ionicons name="arrow-forward" size={14} color={AppColors.blue} />
           </TouchableOpacity>

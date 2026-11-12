@@ -35,7 +35,10 @@ export function HomeHeader() {
             color={AppColors.darkBlue}
           />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.addBtn}>
+        <TouchableOpacity
+          onPress={() => router.push("/book-register")}
+          style={styles.addBtn}
+        >
           <Ionicons name="add" size={22} color={AppColors.white} />
         </TouchableOpacity>
       </View>

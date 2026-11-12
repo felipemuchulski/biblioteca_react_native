@@ -15,4 +15,6 @@ export const AppColors = {
   actionborder: "#DCE9F0",
   bookTitleText: "#17324D",
   categoryText: "#52697E",
+  panel: "#E6F1FA",
+  danger: "#B83A3A",
 } as const;

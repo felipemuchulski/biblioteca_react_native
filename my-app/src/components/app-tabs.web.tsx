@@ -11,7 +11,7 @@ export default function AppTabs() {
     <Tabs>
       <TabSlot style={{ height: "100%" }} />
       <TabList style={styles.tabList}>
-        <TabTrigger name="register" href="/register" asChild>
+        <TabTrigger name="register-user" href="/register-user" asChild>
           <Pressable>
             <Text style={[styles.text, { color: theme.backgroundElement }]}>
               Cadastro
