@@ -17,7 +17,7 @@ calculateDistance(
 
 O contexto de livros calcula a distância entre o perfil autenticado e `book.ownerCoordinates` e a fornece à página inicial e aos detalhes, em `distanceMeters` e `distance`. É uma estimativa em linha reta, não a extensão de uma rota de carro ou a pé. Na ausência de coordenadas, a interface mostra “Distância indisponível”.
 
-O catálogo inicial ainda utiliza `src/mocks/books.ts`, cujos donos não possuem coordenadas reais. Para exibir distâncias reais, a futura integração do catálogo deverá fornecer a localização autorizada de cada dono em `ownerCoordinates`, ou calcular a distância em um backend. Os perfis continuam privados: o cliente não recebe permissão para consultar a localização de outras contas. Nenhuma distância fixa do catálogo é usada como substituta do cálculo.
+O catálogo inicial lê a coleção `books` do Firestore em tempo real, sem filtros, e usa os cards existentes para abrir os detalhes. Como os documentos de livros ainda não armazenam coordenadas dos donos, a distância aparece como indisponível. Os perfis continuam privados: o cliente não recebe permissão para consultar a localização de outras contas.
 
 Validação local: `node --experimental-strip-types --test tests/distance.test.mjs`. Com o Firebase configurado, escolha um ponto no cadastro, confira `coordinates` no Console, altere/remova pela edição e reabra o perfil para verificar a persistência. Para testar a interface com dois pontos conhecidos, adicione temporariamente `ownerCoordinates` a um livro simulado.
 
@@ -31,6 +31,17 @@ Validação local: `node --experimental-strip-types --test tests/distance.test.m
 6. Reinicie o Expo para carregar as variáveis: `npx expo start -c`.
 
 O `.env` é ignorado pelo Git. Os valores `EXPO_PUBLIC_*` são incorporados no app cliente; não coloque senhas de serviço ou chaves privadas nesse arquivo.
+
+### Upload das imagens dos livros
+
+O cadastro envia as fotos selecionadas diretamente ao Cloudinary e grava no Firestore as URLs HTTPS retornadas em `images` e `thumbnail`. Para configurar:
+
+1. Crie um produto no Cloudinary e copie o **Cloud name**.
+2. Em **Settings → Upload → Upload presets**, crie um preset com modo **Unsigned**. Restrinja-o a imagens (`jpg`, `jpeg`, `png` e `webp`) e, se possível, limite o tamanho máximo do arquivo.
+3. Preencha `EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME` e `EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET` no `.env` usado pelo Expo.
+4. Reinicie o Expo com `npx expo start -c`.
+
+O Cloud name e o nome do preset unsigned ficam visíveis no app. Não coloque o API Secret no cliente. O preset unsigned pode ser usado por terceiros que conheçam seu nome, então mantenha os formatos e limites de upload restritos no painel Cloudinary.
 
 As contas ficam em **Authentication → Users** e os perfis em **Firestore Database → Data → users**. Caso o Auth crie a conta, mas o Firestore rejeite o perfil, a tela informa que a conta já foi criada; confira se o banco e as regras foram configurados.
 
@@ -73,20 +84,20 @@ As regras permitem criar e atualizar os arrays somente no perfil do próprio usu
 
 Neste estágio, as regras validam o tipo externo `list`, sem validar o formato de cada item. As regras do Firestore não oferecem um laço genérico para verificar todos os elementos de uma lista; o contrato e a validação dos objetos precisarão acompanhar a implementação do cadastro de livros. A leitura pelo app aceita somente itens que sejam objetos.
 
-Esses arrays ainda não alimentam a página inicial, os favoritos ou `/profile-books`; essas integrações serão implementadas junto ao cadastro de livros. A coleção `books` descrita abaixo continua separada dos campos no perfil.
+Esses arrays não alimentam a página inicial nem `/profile-books`; a coleção `books` continua separada dos campos no perfil.
 
 Para ativar, publique o arquivo completo `database/firestore.rules` em **Firebase Console → Firestore Database → Regras**. As regras permitem os campos; é o código do cadastro que cria os arrays. Elas não adicionam campos automaticamente aos usuários antigos.
 
 Para validar, cadastre uma conta e confira os dois arrays vazios em `users/{uid}`. No simulador de regras, usando uma conta autenticada como dona do documento, confirme que atualizar com arrays de objetos é permitido e que texto/mapa/`null` são recusados. Uma conta diferente e uma requisição sem autenticação devem ser recusadas. Confira também que editar o perfil preserva listas preenchidas e que alterações de `uid`, `email` e `createdAt` continuam proibidas. O Console usa acesso administrativo e não serve para validar recusas das regras.
 
-As telas `/profile-books` e `/profile-trades` são acessíveis pelo perfil e consultam coleções reais do Firestore, em lotes de 20 com a opção Carregar mais. Não utilizam os livros simulados da página inicial.
+A tela `/profile-books` consulta os livros do próprio usuário em lotes de 20, com a opção Carregar mais. A página inicial lê a coleção `books` em tempo real e exibe todos os livros cadastrados aos usuários autenticados, incluindo os próprios.
 
 Contrato dos documentos:
 
 - `books/{id}`: `ownerId` (UID do dono), `title`, `author`, `type` (`donation` ou `exchange`) e `available` (boolean).
 - `trades/{id}`: `participantIds` (lista de UIDs dos participantes), `offeredBookTitle`, `requestedBookTitle`, `status` (`pending`, `accepted`, `completed`, `cancelled` ou `rejected`) e `createdAt` (timestamp).
 
-As consultas usam respectivamente `ownerId == uid` e `participantIds array-contains uid`, sem exigir índices compostos. As regras permitem ler somente livros próprios e trocas das quais o usuário participa. Escritas nessas coleções pelo cliente permanecem bloqueadas: ainda não existe cadastro persistente de livros nem fluxo de troca implementado no app. Para integração, esses fluxos precisarão produzir os documentos acima, com suas próprias validações e permissões. Até lá, é possível preparar documentos de teste pelo Firebase Console, que usa acesso administrativo.
+A tela de livros cadastrados consulta `ownerId == uid`; a tela de trocas usa `participantIds array-contains uid`. A página inicial lê a coleção de livros para qualquer usuário autenticado, enquanto as trocas continuam visíveis apenas aos participantes. O cadastro cria documentos de livros pelo app; as regras permitem que o dono os exclua, mas ainda bloqueiam atualizações. O fluxo de troca ainda não grava documentos pelo app.
 
 ## Validação das novas telas
 

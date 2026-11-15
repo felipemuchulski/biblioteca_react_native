@@ -1,13 +1,21 @@
 import { Link } from "expo-router";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
+  Image,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { useState } from "react";
 import { Timestamp } from "firebase/firestore";
+import { Ionicons } from "@expo/vector-icons";
+import { deleteBook } from "../../../database/books";
+import { AddBookButton } from "@/components/home/AddBookButton";
+import { ScreenBackButton } from "@/components/navigation/ScreenBackButton";
 import { AppColors } from "@/constants/colors";
 import { useProfile } from "@/hooks/use-profile";
 import {
@@ -26,11 +34,28 @@ const statuses: Record<string, string> = {
   rejected: "Recusada",
 };
 
-function RecordCard({ item, kind }: { item: ProfileRecord; kind: RecordKind }) {
+function RecordCard({
+  item,
+  kind,
+  deleting,
+  onDelete,
+}: {
+  item: ProfileRecord;
+  kind: RecordKind;
+  deleting: boolean;
+  onDelete: (id: string, title: string) => void;
+}) {
   const data = item.data;
-  if (kind === "books")
+  if (kind === "books") {
+    const images = Array.isArray(data.images)
+      ? data.images.filter((image: unknown): image is string => typeof image === "string" && !!image.trim())
+      : [];
+    const imageUri = images[0] || text(data.thumbnail, "");
     return (
       <View style={styles.card}>
+        <View style={styles.bookImageContainer}>
+          {imageUri ? <BookCover uri={imageUri} /> : <Text style={styles.imageFallback}>Falha ao carregar imagem</Text>}
+        </View>
         <Text style={styles.title}>{text(data.title, "Livro sem título")}</Text>
         <Text style={styles.body}>
           {text(data.author, "Autor não informado")}
@@ -49,8 +74,23 @@ function RecordCard({ item, kind }: { item: ProfileRecord; kind: RecordKind }) {
               ? "Indisponível"
               : "Disponibilidade não informada"}
         </Text>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={`Excluir livro ${text(data.title, "")}`}
+          accessibilityState={{ disabled: deleting, busy: deleting }}
+          disabled={deleting}
+          onPress={() => onDelete(item.id, text(data.title, "este livro"))}
+          style={[styles.deleteButton, deleting && styles.disabledButton]}
+        >
+          {deleting ? (
+            <ActivityIndicator color={AppColors.danger} size="small" />
+          ) : (
+            <Ionicons name="trash-outline" size={19} color={AppColors.danger} />
+          )}
+        </TouchableOpacity>
       </View>
     );
+  }
   const date =
     data.createdAt instanceof Timestamp
       ? data.createdAt.toDate().toLocaleDateString("pt-BR")
@@ -71,6 +111,12 @@ function RecordCard({ item, kind }: { item: ProfileRecord; kind: RecordKind }) {
   );
 }
 
+function BookCover({ uri }: { uri: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return <Text style={styles.imageFallback}>Falha ao carregar imagem</Text>;
+  return <Image source={{ uri }} style={styles.bookImage} resizeMode="cover" onError={() => setFailed(true)} accessibilityLabel="Capa do livro" />;
+}
+
 export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
   const {
     user,
@@ -80,6 +126,35 @@ export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
   } = useProfile();
   const { records, loading, error, hasMore, retry, loadMore } =
     useProfileRecords(user?.uid, kind);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const confirmDelete = (id: string, title: string) => {
+    const remove = async () => {
+      setDeletingId(id);
+      try {
+        await deleteBook(id);
+      } catch (cause) {
+        const message =
+          cause instanceof Error ? cause.message : "Não foi possível excluir o livro.";
+        if (Platform.OS === "web") globalThis.alert(message);
+        else Alert.alert("Erro ao excluir", message);
+      } finally {
+        setDeletingId(null);
+      }
+    };
+
+    const message = `Tem certeza de que deseja excluir “${title}”? Esta ação não pode ser desfeita.`;
+    if (Platform.OS === "web") {
+      if (globalThis.confirm(message)) void remove();
+      return;
+    }
+
+    Alert.alert("Excluir livro", message, [
+      { text: "Cancelar", style: "cancel" },
+      { text: "Excluir", style: "destructive", onPress: () => void remove() },
+    ]);
+  };
+
   return (
     <>
       <FlatList
@@ -87,7 +162,31 @@ export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
         contentContainerStyle={styles.content}
         data={authError || !user ? [] : records}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <RecordCard item={item} kind={kind} />}
+        ListHeaderComponent={
+          <View style={styles.recordsHeader}>
+            <View style={styles.backButton}>
+              <ScreenBackButton />
+            </View>
+            {kind === "books" && (
+              <Text accessibilityRole="header" style={styles.recordsHeaderTitle}>
+                Meus Livros Cadastrados
+              </Text>
+            )}
+            {kind === "books" && (
+              <View style={styles.addBookButton}>
+                <AddBookButton />
+              </View>
+            )}
+          </View>
+        }
+        renderItem={({ item }) => (
+          <RecordCard
+            item={item}
+            kind={kind}
+            deleting={deletingId === item.id}
+            onDelete={confirmDelete}
+          />
+        )}
         ListEmptyComponent={
           authLoading || (user && loading) ? (
             <ActivityIndicator
@@ -149,12 +248,31 @@ const styles = StyleSheet.create({
     maxWidth: 600,
     alignSelf: "center",
   },
+  recordsHeader: {
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 4,
+    position: "relative",
+  },
+  recordsHeaderTitle: {
+    color: AppColors.darkBlue,
+    fontSize: 20,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  backButton: { position: "absolute", left: 0, top: 2 },
+  addBookButton: { position: "absolute", right: 0, top: 4 },
   card: {
+    position: "relative",
     backgroundColor: AppColors.white,
     padding: 20,
     borderRadius: 16,
     gap: 10,
   },
+  bookImageContainer: { width: 112, height: 148, alignSelf: "center", borderRadius: 10, overflow: "hidden", backgroundColor: AppColors.border, alignItems: "center", justifyContent: "center" },
+  bookImage: { width: "100%", height: "100%" },
+  imageFallback: { color: AppColors.categoryText, textAlign: "center", padding: 8, lineHeight: 20 },
   title: { color: AppColors.darkBlue, fontSize: 18, fontWeight: "700" },
   body: { color: AppColors.categoryText, lineHeight: 22 },
   button: {
@@ -164,5 +282,17 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   buttonText: { color: AppColors.white, fontWeight: "700" },
+  deleteButton: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 18,
+    backgroundColor: "#FCEBEC",
+  },
+  disabledButton: { opacity: 0.6 },
   link: { color: AppColors.blue, paddingVertical: 12 },
 });

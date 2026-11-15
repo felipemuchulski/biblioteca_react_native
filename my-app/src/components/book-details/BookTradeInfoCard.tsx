@@ -13,8 +13,7 @@ export function BookTradeInfoCard({ ownerName }: BookTradeInfoCardProps) {
         Gostou? Ofereça um livro.
       </Text>
       <Text style={styles.subtitle}>
-        No Livroei não há chat. Você demonstra interesse anunciando um livro em
-        troca.
+        {"No Livroei não há chat. Você demonstra interesse anunciando um livro em troca."}
       </Text>
 
       <View style={styles.step}>

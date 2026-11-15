@@ -60,3 +60,13 @@ export async function registerBook(input: RegisterBookInput): Promise<string> {
 
   return reference.id;
 }
+
+export async function deleteBook(bookId: string): Promise<void> {
+  const auth = getFirebaseAuth();
+  const user = auth.currentUser;
+  if (!user) throw new Error("Entre na sua conta para excluir um livro.");
+
+  const firestore = getFirestore(auth.app);
+  const { deleteDoc, doc } = await import("firebase/firestore");
+  await deleteDoc(doc(firestore, "books", bookId));
+}
