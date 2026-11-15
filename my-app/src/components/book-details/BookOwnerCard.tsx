@@ -37,20 +37,18 @@ export function BookOwnerCard({
 
         <View style={styles.locationRow}>
           <Ionicons name="location-outline" size={20} color={AppColors.blue} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.distance}>
-              {distanceMeters != null
-                ? `A aproximadamente ${distance} de você (em linha reta)`
-                : 'Distância indisponível'}
-            </Text>
-            {formattedLocation && (
-              <Text style={styles.place}>{formattedLocation}</Text>
-            )}
-          </View>
+          <Text style={styles.distance}>
+            {distanceMeters !== null && distanceMeters !== undefined
+              ? `A aproximadamente ${distance} de você (em linha reta)`
+              : "Distância indisponível"}
+            {formattedLocation.length > 0 ? (
+              <Text style={styles.place}>{`\n${formattedLocation}`}</Text>
+            ) : null}
+          </Text>
         </View>
 
         <Text style={styles.privacy}>
-          Para sua privacidade, não exibimos endereços exatos.
+          {"Para sua privacidade, não exibimos endereços exatos."}
         </Text>
       </View>
     </View>
@@ -85,7 +83,7 @@ const styles = StyleSheet.create({
   avatarText: { fontSize: 20, fontWeight: "700", color: AppColors.darkBlue },
   name: { fontSize: 17, fontWeight: "700", color: AppColors.darkBlue },
   locationRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
-  distance: { fontSize: 15, fontWeight: "700", color: AppColors.blue },
+  distance: { flex: 1, fontSize: 15, fontWeight: "700", color: AppColors.blue },
   place: { fontSize: 13, color: AppColors.categoryText, marginTop: 2 },
   privacy: { fontSize: 12, color: AppColors.categoryText },
   title: {

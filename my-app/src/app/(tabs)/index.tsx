@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
+    ActivityIndicator,
     ScrollView,
     StyleSheet,
     Text,
@@ -11,8 +12,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { BookCard } from "@/components/book-details/BookCard";
-import { BookGridCard } from "@/components/book-details/BookGridCard";
-import { FilterType, HomeBookFilters } from "@/components/home/HomeBookFilters";
 import { HomeHeader } from "@/components/home/HomeHeader";
 import { AppColors } from "@/constants/colors";
 import { useBooks } from "@/contexts/books-context";
@@ -21,13 +20,18 @@ import { Book } from "@/types/book";
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { books: nearbyBooks = [], setSelectedBook } = useBooks();
-  const { profile } = useProfile();
+  const {
+    books: nearbyBooks = [],
+    setSelectedBook,
+    loading: booksLoading,
+    error: booksError,
+    retry: retryBooks,
+  } = useBooks();
+  const { profile, user } = useProfile();
   const [favoriteOverrides, setFavoriteOverrides] = useState<Record<string, boolean>>({});
   const books = nearbyBooks.map((book) => ({
     ...book, isFavorite: favoriteOverrides[book.id] ?? book.isFavorite,
   }));
-  const [filter, setFilter] = useState<FilterType>("all");
 
   const toggleFavorite = (id: string) => {
     const book = books.find((item) => item.id === id);
@@ -41,13 +45,6 @@ export default function HomeScreen() {
       params: { id: book.id },
     });
   };
-
-  const filteredBooks = books.filter((b) => {
-    if (filter === "donation") return b.type === "donation";
-    if (filter === "exchange") return b.type === "exchange";
-    if (filter === "fiction") return b.category.includes("fiction");
-    return true;
-  });
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -97,43 +94,38 @@ export default function HomeScreen() {
 
         {/* Seção: Perto de você */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Perto de você</Text>
-          <TouchableOpacity>
-            <Text style={styles.sectionLink}>Ver mapa</Text>
-          </TouchableOpacity>
+          <Text style={styles.sectionTitle}>Livros cadastrados</Text>
         </View>
 
-        <HomeBookFilters selected={filter} onSelect={setFilter} />
-
         <View style={styles.cardList}>
-          {filteredBooks.map((book) => (
+          {booksLoading ? (
+            <ActivityIndicator
+              accessibilityLabel="Carregando livros"
+              color={AppColors.blue}
+            />
+          ) : booksError ? (
+            <View style={styles.loadError}>
+              <Text style={styles.empty}>{booksError}</Text>
+              <TouchableOpacity onPress={retryBooks} style={styles.retryButton}>
+                <Text style={styles.retryText}>Tentar novamente</Text>
+              </TouchableOpacity>
+            </View>
+          ) : !user ? (
+            <Text style={styles.empty}>
+              Entre na sua conta para ver os livros cadastrados.
+            </Text>
+          ) : books.length ? books.map((book) => (
             <BookCard
               key={book.id}
               book={book}
               onToggleFavorite={toggleFavorite}
               onPress={handlePress}
             />
-          ))}
-          {filteredBooks.length === 0 && (
-            <Text style={styles.empty}>
-              Nenhum livro encontrado para este filtro.
-            </Text>
+          )) : (
+            <Text style={styles.empty}>Nenhum livro cadastrado ainda.</Text>
           )}
         </View>
 
-        {/* Seção: Novos na estante */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Novos na estante</Text>
-          <TouchableOpacity>
-            <Text style={styles.sectionLink}>Ver todos</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.grid}>
-          {books.map((book) => (
-            <BookGridCard key={book.id} book={book} onPress={handlePress} />
-          ))}
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -215,16 +207,11 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   sectionTitle: { fontSize: 17, fontWeight: "700", color: AppColors.darkBlue },
-  sectionLink: { fontSize: 13, color: AppColors.blue, fontWeight: "500" },
 
   cardList: { paddingHorizontal: 16, marginTop: 12 },
   empty: { color: AppColors.graySecondary, textAlign: "center", marginTop: 16 },
+  loadError: { alignItems: "center", gap: 12 },
+  retryButton: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, backgroundColor: AppColors.blue },
+  retryText: { color: AppColors.white, fontWeight: "700" },
 
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    paddingHorizontal: 16,
-    gap: 16,
-    justifyContent: "space-between",
-  },
 });
