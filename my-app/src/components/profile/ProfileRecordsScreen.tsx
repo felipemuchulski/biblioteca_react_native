@@ -1,8 +1,10 @@
 import { Link } from "expo-router";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -10,6 +12,7 @@ import {
 } from "react-native";
 import { useState } from "react";
 import { Timestamp } from "firebase/firestore";
+import { deleteBook } from "../../../database/books";
 import { AppColors } from "@/constants/colors";
 import { useProfile } from "@/hooks/use-profile";
 import {
@@ -28,7 +31,17 @@ const statuses: Record<string, string> = {
   rejected: "Recusada",
 };
 
-function RecordCard({ item, kind }: { item: ProfileRecord; kind: RecordKind }) {
+function RecordCard({
+  item,
+  kind,
+  deleting,
+  onDelete,
+}: {
+  item: ProfileRecord;
+  kind: RecordKind;
+  deleting: boolean;
+  onDelete: (id: string, title: string) => void;
+}) {
   const data = item.data;
   if (kind === "books") {
     const images = Array.isArray(data.images)
@@ -58,6 +71,19 @@ function RecordCard({ item, kind }: { item: ProfileRecord; kind: RecordKind }) {
               ? "Indisponível"
               : "Disponibilidade não informada"}
         </Text>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityState={{ disabled: deleting, busy: deleting }}
+          disabled={deleting}
+          onPress={() => onDelete(item.id, text(data.title, "este livro"))}
+          style={[styles.deleteButton, deleting && styles.disabledButton]}
+        >
+          {deleting ? (
+            <ActivityIndicator color={AppColors.white} />
+          ) : (
+            <Text style={styles.deleteButtonText}>Excluir livro</Text>
+          )}
+        </TouchableOpacity>
       </View>
     );
   }
@@ -96,6 +122,35 @@ export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
   } = useProfile();
   const { records, loading, error, hasMore, retry, loadMore } =
     useProfileRecords(user?.uid, kind);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const confirmDelete = (id: string, title: string) => {
+    const remove = async () => {
+      setDeletingId(id);
+      try {
+        await deleteBook(id);
+      } catch (cause) {
+        const message =
+          cause instanceof Error ? cause.message : "Não foi possível excluir o livro.";
+        if (Platform.OS === "web") globalThis.alert(message);
+        else Alert.alert("Erro ao excluir", message);
+      } finally {
+        setDeletingId(null);
+      }
+    };
+
+    const message = `Tem certeza de que deseja excluir “${title}”? Esta ação não pode ser desfeita.`;
+    if (Platform.OS === "web") {
+      if (globalThis.confirm(message)) void remove();
+      return;
+    }
+
+    Alert.alert("Excluir livro", message, [
+      { text: "Cancelar", style: "cancel" },
+      { text: "Excluir", style: "destructive", onPress: () => void remove() },
+    ]);
+  };
+
   return (
     <>
       <FlatList
@@ -103,7 +158,14 @@ export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
         contentContainerStyle={styles.content}
         data={authError || !user ? [] : records}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <RecordCard item={item} kind={kind} />}
+        renderItem={({ item }) => (
+          <RecordCard
+            item={item}
+            kind={kind}
+            deleting={deletingId === item.id}
+            onDelete={confirmDelete}
+          />
+        )}
         ListEmptyComponent={
           authLoading || (user && loading) ? (
             <ActivityIndicator
@@ -183,5 +245,13 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   buttonText: { color: AppColors.white, fontWeight: "700" },
+  deleteButton: {
+    alignItems: "center",
+    borderRadius: 12,
+    padding: 14,
+    backgroundColor: AppColors.danger,
+  },
+  deleteButtonText: { color: AppColors.white, fontWeight: "700" },
+  disabledButton: { opacity: 0.6 },
   link: { color: AppColors.blue, paddingVertical: 12 },
 });

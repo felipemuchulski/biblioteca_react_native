@@ -97,7 +97,9 @@ service cloud.firestore {
     match /books/{bookId} {
       allow read: if request.auth != null && resource.data.ownerId == request.auth.uid;
       allow create: if request.auth != null && validBook(request.resource.data);
-      allow update, delete: if false;
+      allow update: if false;
+      allow delete: if request.auth != null
+        && resource.data.ownerId == request.auth.uid;
     }
 
     match /trades/{tradeId} {
