@@ -4,6 +4,7 @@ import * as ImagePicker from "expo-image-picker";
 import {
   Alert,
   Image,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -50,6 +51,11 @@ export function PhotoPicker({ photos, onChange, max = 8, error }: Props) {
   };
 
   const handleAdd = () => {
+    if (Platform.OS === "web") {
+      void pickFromLibrary();
+      return;
+    }
+
     Alert.alert("Adicionar fotos", undefined, [
       { text: "Tirar foto", onPress: takePhoto },
       { text: "Escolher da galeria", onPress: pickFromLibrary },

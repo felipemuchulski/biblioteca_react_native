@@ -9,6 +9,7 @@ import type { BookCondition, BookType } from "@/types/book";
 import { Ionicons } from "@expo/vector-icons";
 import { getFirebaseAuth } from "../../../database/firebase";
 import { registerBook } from "../../../database/books";
+import { uploadBookImages } from "@/services/cloudinary";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -126,7 +127,12 @@ export default function NewBookScreen() {
 
     setSubmitting(true);
     try {
-      await registerBook(payload);
+      const imageUrls = await uploadBookImages(payload.images);
+      await registerBook({
+        ...payload,
+        images: imageUrls,
+        thumbnail: imageUrls[0],
+      });
       Alert.alert("Livro cadastrado!", "Seu exemplar já está na estante.");
       router.back();
     } catch (cause) {

@@ -32,6 +32,17 @@ Validação local: `node --experimental-strip-types --test tests/distance.test.m
 
 O `.env` é ignorado pelo Git. Os valores `EXPO_PUBLIC_*` são incorporados no app cliente; não coloque senhas de serviço ou chaves privadas nesse arquivo.
 
+### Upload das imagens dos livros
+
+O cadastro envia as fotos selecionadas diretamente ao Cloudinary e grava no Firestore as URLs HTTPS retornadas em `images` e `thumbnail`. Para configurar:
+
+1. Crie um produto no Cloudinary e copie o **Cloud name**.
+2. Em **Settings → Upload → Upload presets**, crie um preset com modo **Unsigned**. Restrinja-o a imagens (`jpg`, `jpeg`, `png` e `webp`) e, se possível, limite o tamanho máximo do arquivo.
+3. Preencha `EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME` e `EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET` no `.env` usado pelo Expo.
+4. Reinicie o Expo com `npx expo start -c`.
+
+O Cloud name e o nome do preset unsigned ficam visíveis no app. Não coloque o API Secret no cliente. O preset unsigned pode ser usado por terceiros que conheçam seu nome, então mantenha os formatos e limites de upload restritos no painel Cloudinary.
+
 As contas ficam em **Authentication → Users** e os perfis em **Firestore Database → Data → users**. Caso o Auth crie a conta, mas o Firestore rejeite o perfil, a tela informa que a conta já foi criada; confira se o banco e as regras foram configurados.
 
 ## Criação e visualização do perfil

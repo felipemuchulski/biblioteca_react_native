@@ -2,11 +2,13 @@ import { Link } from "expo-router";
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { useState } from "react";
 import { Timestamp } from "firebase/firestore";
 import { AppColors } from "@/constants/colors";
 import { useProfile } from "@/hooks/use-profile";
@@ -28,9 +30,16 @@ const statuses: Record<string, string> = {
 
 function RecordCard({ item, kind }: { item: ProfileRecord; kind: RecordKind }) {
   const data = item.data;
-  if (kind === "books")
+  if (kind === "books") {
+    const images = Array.isArray(data.images)
+      ? data.images.filter((image: unknown): image is string => typeof image === "string" && !!image.trim())
+      : [];
+    const imageUri = images[0] || text(data.thumbnail, "");
     return (
       <View style={styles.card}>
+        <View style={styles.bookImageContainer}>
+          {imageUri ? <BookCover uri={imageUri} /> : <Text style={styles.imageFallback}>Falha ao carregar imagem</Text>}
+        </View>
         <Text style={styles.title}>{text(data.title, "Livro sem título")}</Text>
         <Text style={styles.body}>
           {text(data.author, "Autor não informado")}
@@ -51,6 +60,7 @@ function RecordCard({ item, kind }: { item: ProfileRecord; kind: RecordKind }) {
         </Text>
       </View>
     );
+  }
   const date =
     data.createdAt instanceof Timestamp
       ? data.createdAt.toDate().toLocaleDateString("pt-BR")
@@ -69,6 +79,12 @@ function RecordCard({ item, kind }: { item: ProfileRecord; kind: RecordKind }) {
       {!!date && <Text style={styles.body}>Registrada em {date}</Text>}
     </View>
   );
+}
+
+function BookCover({ uri }: { uri: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return <Text style={styles.imageFallback}>Falha ao carregar imagem</Text>;
+  return <Image source={{ uri }} style={styles.bookImage} resizeMode="cover" onError={() => setFailed(true)} accessibilityLabel="Capa do livro" />;
 }
 
 export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
@@ -155,6 +171,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     gap: 10,
   },
+  bookImageContainer: { width: 112, height: 148, alignSelf: "center", borderRadius: 10, overflow: "hidden", backgroundColor: AppColors.border, alignItems: "center", justifyContent: "center" },
+  bookImage: { width: "100%", height: "100%" },
+  imageFallback: { color: AppColors.categoryText, textAlign: "center", padding: 8, lineHeight: 20 },
   title: { color: AppColors.darkBlue, fontSize: 18, fontWeight: "700" },
   body: { color: AppColors.categoryText, lineHeight: 22 },
   button: {
