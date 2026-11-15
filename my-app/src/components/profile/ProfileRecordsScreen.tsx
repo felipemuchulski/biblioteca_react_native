@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { useState } from "react";
 import { Timestamp } from "firebase/firestore";
+import { Ionicons } from "@expo/vector-icons";
 import { deleteBook } from "../../../database/books";
 import { AppColors } from "@/constants/colors";
 import { useProfile } from "@/hooks/use-profile";
@@ -73,15 +74,16 @@ function RecordCard({
         </Text>
         <TouchableOpacity
           accessibilityRole="button"
+          accessibilityLabel={`Excluir livro ${text(data.title, "")}`}
           accessibilityState={{ disabled: deleting, busy: deleting }}
           disabled={deleting}
           onPress={() => onDelete(item.id, text(data.title, "este livro"))}
           style={[styles.deleteButton, deleting && styles.disabledButton]}
         >
           {deleting ? (
-            <ActivityIndicator color={AppColors.white} />
+            <ActivityIndicator color={AppColors.danger} size="small" />
           ) : (
-            <Text style={styles.deleteButtonText}>Excluir livro</Text>
+            <Ionicons name="trash-outline" size={19} color={AppColors.danger} />
           )}
         </TouchableOpacity>
       </View>
@@ -228,6 +230,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   card: {
+    position: "relative",
     backgroundColor: AppColors.white,
     padding: 20,
     borderRadius: 16,
@@ -246,12 +249,16 @@ const styles = StyleSheet.create({
   },
   buttonText: { color: AppColors.white, fontWeight: "700" },
   deleteButton: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    width: 36,
+    height: 36,
     alignItems: "center",
-    borderRadius: 12,
-    padding: 14,
-    backgroundColor: AppColors.danger,
+    justifyContent: "center",
+    borderRadius: 18,
+    backgroundColor: "#FCEBEC",
   },
-  deleteButtonText: { color: AppColors.white, fontWeight: "700" },
   disabledButton: { opacity: 0.6 },
   link: { color: AppColors.blue, paddingVertical: 12 },
 });
