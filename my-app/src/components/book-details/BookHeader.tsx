@@ -9,25 +9,14 @@ import {
 
 import { AppColors } from "@/constants/colors";
 import { useRouter } from "expo-router";
+import { ScreenBackButton } from "@/components/navigation/ScreenBackButton";
 
 export function BookHeader() {
   const router = useRouter();
 
-  function handleGoBack() {
-    if (!router) return;
-
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.push({ pathname: "/", params: {} });
-    }
-  }
-
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.backBtn} onPress={handleGoBack}>
-        <Ionicons name="arrow-back" size={22} color={AppColors.darkBlue} />
-      </TouchableOpacity>
+      <ScreenBackButton />
 
       <Pressable
         style={styles.logoContainer}
@@ -85,17 +74,6 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.white,
     alignItems: "center",
     justifyContent: "center",
-    width: 40,
-    height: 40,
-    borderRadius: 100,
-    borderColor: AppColors.border,
-    borderWidth: 1,
-  },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
     width: 40,
     height: 40,
     borderRadius: 100,

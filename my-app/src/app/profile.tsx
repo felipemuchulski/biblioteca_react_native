@@ -20,6 +20,7 @@ import { formatWhatsappInput } from "../../database/users";
 import { getFirebaseAuth } from "../../database/firebase";
 import { formatAddress } from "@/utils/address";
 import { ProfileEditor } from "@/components/profile/ProfileEditor";
+import { ScreenBackButton } from "@/components/navigation/ScreenBackButton";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -77,6 +78,7 @@ export default function ProfileScreen() {
           style={styles.screen}
           keyboardShouldPersistTaps="handled"
         >
+          <ScreenBackButton />
           {loading ? (
             <View style={styles.center}>
               <ActivityIndicator size="large" color={AppColors.blue} />

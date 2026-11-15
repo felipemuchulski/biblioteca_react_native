@@ -15,6 +15,7 @@ import { Timestamp } from "firebase/firestore";
 import { Ionicons } from "@expo/vector-icons";
 import { deleteBook } from "../../../database/books";
 import { AddBookButton } from "@/components/home/AddBookButton";
+import { ScreenBackButton } from "@/components/navigation/ScreenBackButton";
 import { AppColors } from "@/constants/colors";
 import { useProfile } from "@/hooks/use-profile";
 import {
@@ -162,16 +163,21 @@ export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
         data={authError || !user ? [] : records}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={
-          kind === "books" ? (
-            <View style={styles.recordsHeader}>
+          <View style={styles.recordsHeader}>
+            <View style={styles.backButton}>
+              <ScreenBackButton />
+            </View>
+            {kind === "books" && (
               <Text accessibilityRole="header" style={styles.recordsHeaderTitle}>
                 Meus Livros Cadastrados
               </Text>
+            )}
+            {kind === "books" && (
               <View style={styles.addBookButton}>
                 <AddBookButton />
               </View>
-            </View>
-          ) : null
+            )}
+          </View>
         }
         renderItem={({ item }) => (
           <RecordCard
@@ -247,6 +253,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 4,
+    position: "relative",
   },
   recordsHeaderTitle: {
     color: AppColors.darkBlue,
@@ -254,6 +261,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
   },
+  backButton: { position: "absolute", left: 0, top: 2 },
   addBookButton: { position: "absolute", right: 0, top: 4 },
   card: {
     position: "relative",
