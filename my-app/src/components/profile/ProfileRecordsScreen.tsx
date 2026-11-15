@@ -14,6 +14,7 @@ import { useState } from "react";
 import { Timestamp } from "firebase/firestore";
 import { Ionicons } from "@expo/vector-icons";
 import { deleteBook } from "../../../database/books";
+import { AddBookButton } from "@/components/home/AddBookButton";
 import { AppColors } from "@/constants/colors";
 import { useProfile } from "@/hooks/use-profile";
 import {
@@ -160,6 +161,18 @@ export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
         contentContainerStyle={styles.content}
         data={authError || !user ? [] : records}
         keyExtractor={(item) => item.id}
+        ListHeaderComponent={
+          kind === "books" ? (
+            <View style={styles.recordsHeader}>
+              <Text accessibilityRole="header" style={styles.recordsHeaderTitle}>
+                Meus Livros Cadastrados
+              </Text>
+              <View style={styles.addBookButton}>
+                <AddBookButton />
+              </View>
+            </View>
+          ) : null
+        }
         renderItem={({ item }) => (
           <RecordCard
             item={item}
@@ -229,6 +242,19 @@ const styles = StyleSheet.create({
     maxWidth: 600,
     alignSelf: "center",
   },
+  recordsHeader: {
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  recordsHeaderTitle: {
+    color: AppColors.darkBlue,
+    fontSize: 20,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  addBookButton: { position: "absolute", right: 0, top: 4 },
   card: {
     position: "relative",
     backgroundColor: AppColors.white,

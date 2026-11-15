@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { AppColors } from "@/constants/colors";
+import { AddBookButton } from "@/components/home/AddBookButton";
 
 export function HomeHeader() {
   const router = useRouter();
@@ -35,12 +36,7 @@ export function HomeHeader() {
             color={AppColors.darkBlue}
           />
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => router.push("/book-register")}
-          style={styles.addBtn}
-        >
-          <Ionicons name="add" size={22} color={AppColors.white} />
-        </TouchableOpacity>
+        <AddBookButton />
       </View>
     </View>
   );
@@ -71,12 +67,4 @@ const styles = StyleSheet.create({
   },
   rightActions: { flexDirection: "row", alignItems: "center", gap: 8 },
   iconBtn: { padding: 4 },
-  addBtn: {
-    backgroundColor: AppColors.blue,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
 });
