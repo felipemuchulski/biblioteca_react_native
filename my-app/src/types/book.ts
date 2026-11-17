@@ -1,4 +1,4 @@
-import type { Coordinates } from '@/utils/distance';
+import type { Coordinates } from "@/utils/distance";
 
 export type BookType = "donation" | "exchange" | "pagination";
 export type BookCondition = "new" | "like_new" | "good" | "worn";
@@ -15,6 +15,7 @@ export interface Book {
   distanceMeters?: number | null;
   ownerCoordinates?: Coordinates | null;
   owner: string;
+  ownerId?: string;
   isFavorite: boolean;
   category: string[];
   available: boolean;
@@ -25,7 +26,10 @@ export interface Book {
 }
 
 export interface BooksContextData {
-  books?: Book[];
+  books: Book[];
+  loading: boolean;
+  error: string;
+  retry: () => void;
   selectedBook: Book | null;
   setSelectedBook: (value: Book) => void;
 }

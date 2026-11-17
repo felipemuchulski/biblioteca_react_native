@@ -215,7 +215,7 @@ service cloud.firestore {
     }
 
     match /books/{bookId} {
-      allow read: if request.auth != null;
+      allow read: if true;
       allow create: if request.auth != null && validBook(request.resource.data);
       allow update: if request.auth != null
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([

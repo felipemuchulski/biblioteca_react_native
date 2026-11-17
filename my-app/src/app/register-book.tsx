@@ -1,4 +1,4 @@
-import { BookHeader } from "@/components/book-details/BookHeader";
+import { CustomHeader } from "@/components/common/CustomHeader";
 import { ConditionSelector } from "@/components/book-register/ConditionSelector";
 import { BookFormField } from "@/components/book-register/BookFormField";
 import { BookTypeSelector } from "@/components/book-register/BookTypeSelector";
@@ -7,11 +7,11 @@ import { ConfirmBookRegisterButton } from "@/components/book-register/ConfirmBoo
 import { AppColors } from "@/constants/colors";
 import type { BookCondition, BookType } from "@/types/book";
 import { Ionicons } from "@expo/vector-icons";
-import { getFirebaseAuth } from "../../../database/firebase";
-import { registerBook } from "../../../database/books";
+import { getFirebaseAuth } from "../../database/firebase";
+import { registerBook } from "../../database/books";
 import { uploadBookImages } from "@/services/cloudinary";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -25,6 +25,8 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import { useIsAuthenticated } from "@/hooks/use-is-authenticated";
+import { useProfile } from "@/hooks/use-profile";
 
 type FormErrors = Partial<
   Record<"title" | "author" | "photos" | "condition" | "type", string>
@@ -50,12 +52,30 @@ const parseCategories = (value: string) =>
 
 export default function NewBookScreen() {
   const router = useRouter();
+  const isAuthenticated = useIsAuthenticated();
+  const { loading: authLoading } = useProfile();
+  const alertShown = useRef(false);
   const insets = useSafeAreaInsets();
   const { tradeWithBookId } = useLocalSearchParams<{
     tradeWithBookId?: string | string[];
   }>();
   const relatedBookId =
     typeof tradeWithBookId === "string" ? tradeWithBookId : undefined;
+
+  useEffect(() => {
+    if (authLoading || isAuthenticated || alertShown.current) return;
+    alertShown.current = true;
+    Alert.alert("Entre na sua conta", "Faça login para cadastrar um livro.", [
+      {
+        text: "Ir para o login",
+        onPress: () =>
+          router.replace({
+            pathname: "/login",
+            params: { returnTo: "/register-book" },
+          }),
+      },
+    ]);
+  }, [authLoading, isAuthenticated, router]);
 
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
@@ -84,9 +104,8 @@ export default function NewBookScreen() {
   const handleSubmit = async () => {
     if (submitting) return;
 
-    let auth;
     try {
-      auth = getFirebaseAuth();
+      getFirebaseAuth();
     } catch (cause) {
       Alert.alert(
         "Configuração necessária",
@@ -97,14 +116,18 @@ export default function NewBookScreen() {
       return;
     }
 
-    if (!auth.currentUser) {
+    if (!isAuthenticated) {
       Alert.alert(
         "Entre na sua conta",
         "Você precisa estar logado para cadastrar um livro.",
         [
           {
             text: "Criar perfil",
-            onPress: () => router.push("/register-user"),
+            onPress: () =>
+              router.push({
+                pathname: "/login",
+                params: { returnTo: "/register-book" },
+              }),
           },
         ],
       );
@@ -149,7 +172,7 @@ export default function NewBookScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <BookHeader />
+      <CustomHeader isToShowBackArrow backArrowRoute="/" isToShowLike />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : "height"}

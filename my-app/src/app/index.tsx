@@ -32,6 +32,9 @@ export default function HomeScreen() {
   const books = nearbyBooks.filter((book) => book.available).map((book) => ({
     ...book, isFavorite: favoriteOverrides[book.id] ?? book.isFavorite,
   }));
+  const visibleBooks = user
+    ? books.filter((book) => book.ownerId !== user.uid)
+    : books.slice(0, 5);
 
   const toggleFavorite = (id: string) => {
     const book = books.find((item) => item.id === id);
@@ -85,7 +88,7 @@ export default function HomeScreen() {
           <TouchableOpacity
             style={styles.bannerBtn}
             activeOpacity={0.8}
-            onPress={() => router.push("/book-register")}
+            onPress={() => router.push("/register-book")}
           >
             <Text style={styles.bannerBtnText}>Cadastrar um livro</Text>
             <Ionicons name="arrow-forward" size={14} color={AppColors.blue} />
@@ -110,11 +113,7 @@ export default function HomeScreen() {
                 <Text style={styles.retryText}>Tentar novamente</Text>
               </TouchableOpacity>
             </View>
-          ) : !user ? (
-            <Text style={styles.empty}>
-              Entre na sua conta para ver os livros cadastrados.
-            </Text>
-          ) : books.length ? books.map((book) => (
+          ) : visibleBooks.length ? visibleBooks.map((book) => (
             <BookCard
               key={book.id}
               book={book}
@@ -123,6 +122,17 @@ export default function HomeScreen() {
             />
           )) : (
             <Text style={styles.empty}>Nenhum livro cadastrado ainda.</Text>
+          )}
+          {!booksLoading && !booksError && !user && visibleBooks.length > 0 && (
+            <TouchableOpacity
+              accessibilityRole="link"
+              onPress={() => router.push("/login")}
+              style={styles.signupPrompt}
+            >
+              <Text style={styles.signupPromptText}>
+                Gostou do que viu? Crie sua conta para ver mais novidades!
+              </Text>
+            </TouchableOpacity>
           )}
         </View>
 
@@ -213,5 +223,17 @@ const styles = StyleSheet.create({
   loadError: { alignItems: "center", gap: 12 },
   retryButton: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, backgroundColor: AppColors.blue },
   retryText: { color: AppColors.white, fontWeight: "700" },
+  signupPrompt: {
+    marginTop: 16,
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: AppColors.panel,
+  },
+  signupPromptText: {
+    textAlign: "center",
+    color: AppColors.darkBlue,
+    fontSize: 14,
+    fontWeight: "600",
+  },
 
 });

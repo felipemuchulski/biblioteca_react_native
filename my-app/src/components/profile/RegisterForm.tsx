@@ -29,7 +29,12 @@ import {
   UserProfileSaveError,
 } from "../../../database/users";
 
-export default function RegisterUserScreen() {
+type Props = {
+  onBack: () => void;
+  returnTo?: string;
+};
+
+export function RegisterForm({ onBack, returnTo }: Props) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -94,7 +99,7 @@ export default function RegisterUserScreen() {
         address,
         coordinates,
       );
-      router.replace("/profile");
+      router.replace(returnTo === "/register-book" ? "/register-book" : "/login");
     } catch (cause) {
       if (cause instanceof UserProfileSaveError) {
         const firestoreCause = cause.originalCause;
@@ -151,7 +156,7 @@ export default function RegisterUserScreen() {
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityLabel="Voltar"
-            onPress={() => router.back()}
+            onPress={onBack}
             style={styles.backButton}
           >
             <Ionicons name="arrow-back" size={22} color={AppColors.darkBlue} />

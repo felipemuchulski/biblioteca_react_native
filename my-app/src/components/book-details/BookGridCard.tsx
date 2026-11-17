@@ -17,9 +17,10 @@ const CARD_WIDTH = (Dimensions.get("window").width - 48) / 2;
 interface BookGridCardProps {
   book: Book;
   onPress: (book: Book) => void;
+  showDistance?: boolean;
 }
 
-export function BookGridCard({ book, onPress }: BookGridCardProps) {
+export function BookGridCard({ book, onPress, showDistance = true }: BookGridCardProps) {
   return (
     <TouchableOpacity
       style={styles.card}
@@ -43,14 +44,14 @@ export function BookGridCard({ book, onPress }: BookGridCardProps) {
         <Text style={styles.author} numberOfLines={1}>
           {book.author}
         </Text>
-        <View style={styles.distanceRow}>
+        {showDistance && <View style={styles.distanceRow}>
           <Ionicons
             name="location-outline"
             size={12}
             color={AppColors.graySecondary}
           />
           <Text style={styles.distance}>{book.distance}</Text>
-        </View>
+        </View>}
       </View>
     </TouchableOpacity>
   );

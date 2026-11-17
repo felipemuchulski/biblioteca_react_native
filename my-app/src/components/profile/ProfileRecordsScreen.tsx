@@ -315,8 +315,8 @@ export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
               <Text style={styles.body}>
                 Crie seu perfil para acessar esta lista.
               </Text>
-              <Link href="/register-user" style={styles.link}>
-                Criar perfil
+              <Link href="/login" style={styles.link}>
+                Ir para o login
               </Link>
             </View>
           ) : (

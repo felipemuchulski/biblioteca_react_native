@@ -1,10 +1,14 @@
 import { BooksProvider } from "@/contexts/books-context";
-import { Slot } from "expo-router";
+import { Stack } from "expo-router";
 
 export default function RootLayout() {
   return (
     <BooksProvider>
-      <Slot />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="book/[id]" />
+        <Stack.Screen name="login" />
+      </Stack>
     </BooksProvider>
   );
 }

@@ -9,7 +9,11 @@ import {
 import { collection, getFirestore, onSnapshot, type DocumentData } from 'firebase/firestore';
 import type { Book, BookCondition, BookType, BooksContextData } from '@/types/book';
 import { useProfile } from '@/hooks/use-profile';
-import { calculateDistance, formatDistance } from '@/utils/distance';
+import {
+  calculateDistance,
+  formatDistance,
+  isValidCoordinates,
+} from '@/utils/distance';
 import { getFirebaseAuth } from '../../database/firebase';
 
 type BooksContextValue = BooksContextData & {
@@ -41,7 +45,11 @@ function mapBook(id: string, data: DocumentData): Book | null {
     thumbnail: thumbnail || bookImages[0],
     type: types.includes(data.type) ? data.type : 'donation',
     distance: formatDistance(null),
+    ownerCoordinates: isValidCoordinates(data.ownerCoordinates)
+      ? data.ownerCoordinates
+      : null,
     owner: typeof data.owner === 'string' && data.owner.trim() ? data.owner : 'Usuário',
+    ownerId: typeof data.ownerId === 'string' ? data.ownerId : undefined,
     isFavorite: false,
     category: Array.isArray(data.category)
       ? data.category.filter((category: unknown): category is string => typeof category === 'string')
@@ -49,6 +57,10 @@ function mapBook(id: string, data: DocumentData): Book | null {
     available: typeof data.available === 'boolean' ? data.available : true,
     bookCondition: conditions.includes(data.bookCondition) ? data.bookCondition : 'good',
     ...(typeof data.bookConditionNote === 'string' ? { bookConditionNote: data.bookConditionNote } : {}),
+    ...(typeof data.ownerNeighborhood === 'string'
+      ? { ownerNeighborhood: data.ownerNeighborhood }
+      : {}),
+    ...(typeof data.ownerCity === 'string' ? { ownerCity: data.ownerCity } : {}),
   };
 }
 
@@ -65,8 +77,7 @@ export function BooksProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    if (!userId && profileLoading) return;
-    if (!userId) return;
+    if (profileLoading) return;
 
     let active = true;
     try {
@@ -76,7 +87,7 @@ export function BooksProvider({ children }: { children: ReactNode }) {
         (snapshot) => {
           if (!active) return;
           setState({
-            uid: userId,
+            uid: userId ?? '',
             attempt,
             books: snapshot.docs
               .map((document) => mapBook(document.id, document.data()))
@@ -88,7 +99,7 @@ export function BooksProvider({ children }: { children: ReactNode }) {
         () => {
           if (active) {
             setState({
-              uid: userId,
+              uid: userId ?? '',
               attempt,
               books: [],
               loading: false,
@@ -105,7 +116,7 @@ export function BooksProvider({ children }: { children: ReactNode }) {
       const failureTimeout = setTimeout(() => {
         if (active) {
           setState({
-            uid: userId,
+            uid: userId ?? '',
             attempt,
             books: [],
             loading: false,
@@ -120,7 +131,7 @@ export function BooksProvider({ children }: { children: ReactNode }) {
     }
   }, [userId, profileLoading, attempt]);
 
-  const stateIsCurrent = !!userId && state.uid === userId && state.attempt === attempt;
+  const stateIsCurrent = state.uid === (userId ?? '') && state.attempt === attempt;
   const books = useMemo(() => (stateIsCurrent ? state.books : []).map((book) => {
     const distanceMeters = calculateDistance(profile?.coordinates, book.ownerCoordinates);
     return { ...book, distanceMeters, distance: formatDistance(distanceMeters) };
@@ -131,7 +142,7 @@ export function BooksProvider({ children }: { children: ReactNode }) {
     <BooksContext.Provider
       value={{
         books,
-        loading: userId ? !stateIsCurrent || state.loading : profileLoading,
+        loading: !stateIsCurrent || state.loading,
         error: stateIsCurrent ? state.error : '',
         retry: () => setAttempt((current) => current + 1),
         selectedBook,

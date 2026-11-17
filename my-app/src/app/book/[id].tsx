@@ -5,6 +5,7 @@ import { BookOwnerCard } from "@/components/book-details/BookOwnerCard";
 import { BookTradeButton } from "@/components/book-details/BookTradeButton";
 import { BookTradeInfoCard } from "@/components/book-details/BookTradeInfoCard";
 import { BookTypeBadge } from "@/components/book-details/BookTypeBadge";
+import { CustomHeader } from "@/components/common/CustomHeader";
 import { AppColors } from "@/constants/colors";
 import { useBooks } from "@/contexts/books-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -12,7 +13,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { BookHeader } from "../../components/book-details/BookHeader";
 
 export default function BookDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -43,7 +43,7 @@ export default function BookDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <BookHeader />
+      <CustomHeader isToShowBackArrow backArrowRoute="/" isToShowLike />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.imageContainer}>
           <Image
