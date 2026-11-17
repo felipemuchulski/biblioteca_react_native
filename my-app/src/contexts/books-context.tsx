@@ -34,6 +34,7 @@ function mapBook(id: string, data: DocumentData): Book | null {
 
   return {
     id,
+    ...(typeof data.ownerId === 'string' ? { ownerId: data.ownerId } : {}),
     title: data.title,
     author: data.author,
     images: bookImages,
