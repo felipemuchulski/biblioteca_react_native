@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { collection, getFirestore, limit, onSnapshot, query, where, type DocumentData } from 'firebase/firestore';
 import { getFirebaseAuth } from '../../database/firebase';
 
-export type ProfileRecord = { id: string; data: DocumentData };
+export type ProfileRecord = { id: string; data: DocumentData; hasPendingWrites: boolean };
 export type RecordKind = 'books' | 'trades';
 
 export function useProfileRecords(uid: string | undefined, kind: RecordKind) {
@@ -20,9 +20,13 @@ export function useProfileRecords(uid: string | undefined, kind: RecordKind) {
     try {
       const db = getFirestore(getFirebaseAuth().app);
       const filter = kind === 'books' ? where('ownerId', '==', uid) : where('participantIds', 'array-contains', uid);
-      unsubscribe = onSnapshot(query(collection(db, kind), filter, limit(pageSize + 1)), (snapshot) => {
+      unsubscribe = onSnapshot(query(collection(db, kind), filter, limit(pageSize + 1)), { includeMetadataChanges: true }, (snapshot) => {
         if (active) setState({ key, loading: false, error: '', hasMore: snapshot.size > pageSize,
-          records: snapshot.docs.slice(0, pageSize).map((item) => ({ id: item.id, data: item.data() })),
+          records: snapshot.docs.slice(0, pageSize).map((item) => ({
+            id: item.id,
+            data: item.data(),
+            hasPendingWrites: item.metadata.hasPendingWrites,
+          })),
         });
       }, fail);
     } catch { fail(); }

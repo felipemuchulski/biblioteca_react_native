@@ -14,10 +14,11 @@ import { useState } from "react";
 import { Timestamp } from "firebase/firestore";
 import { Ionicons } from "@expo/vector-icons";
 import { deleteBook } from "../../../database/books";
-import { cancelTrade, rejectTrade } from "../../../database/trades";
+import { acceptTrade, cancelTrade, declineNegotiation, rejectTrade } from "../../../database/trades";
 import { AddBookButton } from "@/components/home/AddBookButton";
 import { ScreenBackButton } from "@/components/navigation/ScreenBackButton";
 import { AppColors } from "@/constants/colors";
+import { TradeContactInfo } from "@/components/profile/TradeContactInfo";
 import { useProfile } from "@/hooks/use-profile";
 import {
   useProfileRecords,
@@ -33,6 +34,7 @@ const statuses: Record<string, string> = {
   completed: "Concluída",
   cancelled: "Cancelada",
   rejected: "Recusada",
+  negotiating: "Aguardando Negociação",
 };
 
 function RecordCard({
@@ -50,7 +52,7 @@ function RecordCard({
   onDelete: (id: string, title: string) => void;
   currentUid?: string;
   responding: boolean;
-  onTradeAction: (id: string, action: "cancel" | "reject") => void;
+  onTradeAction: (id: string, action: "cancel" | "reject" | "accept" | "decline") => void;
 }) {
   const data = item.data;
   if (kind === "books") {
@@ -110,6 +112,9 @@ function RecordCard({
   const isSender = sender.uid === currentUid;
   const isRecipient = recipient.uid === currentUid;
   const pending = data.status === "pending";
+  const negotiating = data.status === "negotiating";
+  const otherUserId = (isSender ? recipient.uid : sender.uid);
+  const otherName = text(isSender ? recipient.displayName : sender.displayName, "outro participante");
   return (
     <View style={styles.card}>
       <Text style={styles.title}>Solicitação de troca</Text>
@@ -121,6 +126,15 @@ function RecordCard({
         Situação: {statuses[text(data.status, "")] ?? "Não informada"}
       </Text>
       {!!date && <Text style={styles.body}>Registrada em {date}</Text>}
+      {negotiating && item.hasPendingWrites && (
+        <View style={styles.contactLoading}>
+          <ActivityIndicator color={AppColors.blue} size="small" />
+          <Text style={styles.body}>Aguardando confirmação para carregar os contatos...</Text>
+        </View>
+      )}
+      {negotiating && !item.hasPendingWrites && typeof otherUserId === "string" && (
+        <TradeContactInfo tradeId={item.id} otherUserId={otherUserId} otherName={otherName} />
+      )}
       {pending && isSender && (
         <TouchableOpacity disabled={responding} onPress={() => onTradeAction(item.id, "cancel")} style={[styles.tradeAction, styles.cancelAction, responding && styles.disabledButton]}>
           {responding ? <ActivityIndicator color={AppColors.danger} size="small" /> : <Text style={styles.cancelText}>Cancelar solicitação</Text>}
@@ -131,8 +145,18 @@ function RecordCard({
           <TouchableOpacity disabled={responding} onPress={() => onTradeAction(item.id, "reject")} style={[styles.tradeAction, styles.cancelAction, responding && styles.disabledButton]}>
             {responding ? <ActivityIndicator color={AppColors.danger} size="small" /> : <Text style={styles.cancelText}>Recusar</Text>}
           </TouchableOpacity>
-          <TouchableOpacity disabled={responding} onPress={() => {}} style={[styles.tradeAction, styles.acceptAction]}>
+          <TouchableOpacity disabled={responding} onPress={() => onTradeAction(item.id, "accept")} style={[styles.tradeAction, styles.acceptAction, responding && styles.disabledButton]}>
             <Text style={styles.acceptText}>Aceitar</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      {negotiating && (
+        <View style={styles.tradeActions}>
+          <TouchableOpacity disabled={responding} onPress={() => {}} style={[styles.tradeAction, styles.acceptAction]}>
+            <Text style={styles.acceptText}>Troca bem-sucedida</Text>
+          </TouchableOpacity>
+          <TouchableOpacity disabled={responding} onPress={() => onTradeAction(item.id, "decline")} style={[styles.tradeAction, styles.cancelAction, responding && styles.disabledButton]}>
+            {responding ? <ActivityIndicator color={AppColors.danger} size="small" /> : <Text style={styles.cancelText}>Troca declinada</Text>}
           </TouchableOpacity>
         </View>
       )}
@@ -149,6 +173,7 @@ function BookCover({ uri }: { uri: string }) {
 export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
   const {
     user,
+    profile,
     loading: authLoading,
     error: authError,
     retry: retryAuth,
@@ -158,13 +183,18 @@ export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [respondingId, setRespondingId] = useState<string | null>(null);
 
-  const respondToTrade = async (id: string, action: "cancel" | "reject") => {
-    const actionLabel = action === "cancel" ? "cancelar" : "recusar";
+  const respondToTrade = async (id: string, action: "cancel" | "reject" | "accept" | "decline") => {
+    const actionLabel = action === "cancel" ? "cancelar" : action === "reject" ? "recusar" : "declinar";
     const perform = async () => {
       setRespondingId(id);
       try {
         if (action === "cancel") await cancelTrade(id);
-        else await rejectTrade(id);
+        else if (action === "reject") await rejectTrade(id);
+        else if (action === "accept") await acceptTrade(id, {
+          email: user?.email ?? profile?.email ?? "",
+          whatsapp: profile?.whatsapp ?? "",
+        });
+        else await declineNegotiation(id);
       } catch (cause) {
         const message = cause instanceof Error ? cause.message : "Tente novamente mais tarde.";
         if (Platform.OS === "web") globalThis.alert(message);
@@ -173,6 +203,10 @@ export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
         setRespondingId(null);
       }
     };
+    if (action === "accept" || action === "decline") {
+      void perform();
+      return;
+    }
     const message = `Deseja ${actionLabel} esta solicitação de troca?`;
     if (Platform.OS === "web") {
       if (globalThis.confirm(message)) void perform();
@@ -180,7 +214,7 @@ export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
     }
     Alert.alert("Confirmar ação", message, [
       { text: "Voltar", style: "cancel" },
-      { text: action === "cancel" ? "Cancelar solicitação" : "Recusar", style: "destructive", onPress: () => void perform() },
+      { text: action === "cancel" ? "Cancelar solicitação" : action === "reject" ? "Recusar" : "Declinar troca", style: "destructive", onPress: () => void perform() },
     ]);
   };
 
@@ -354,6 +388,7 @@ const styles = StyleSheet.create({
   },
   disabledButton: { opacity: 0.6 },
   tradeActions: { flexDirection: "row", gap: 10 },
+  contactLoading: { flexDirection: "row", alignItems: "center", gap: 8 },
   tradeAction: { flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: 12, paddingHorizontal: 12 },
   cancelAction: { backgroundColor: "#FCEBEC" },
   cancelText: { color: AppColors.danger, fontWeight: "700" },

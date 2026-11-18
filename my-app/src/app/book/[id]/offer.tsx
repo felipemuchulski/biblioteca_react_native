@@ -60,6 +60,10 @@ export default function TradeOfferScreen() {
     try {
       await createTrade({
         senderName: profile?.displayName || user?.displayName || "Usuário",
+        senderContact: {
+          email: user?.email ?? profile?.email ?? "",
+          whatsapp: profile?.whatsapp ?? "",
+        },
         recipientId: requestedBook.ownerId,
         recipientName: requestedBook.owner,
         offeredBooks: offeredBooks.map(({ id, title, author, thumbnail }) => ({ id, title, author, thumbnail })),

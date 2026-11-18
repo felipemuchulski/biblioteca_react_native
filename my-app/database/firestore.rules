@@ -140,6 +140,14 @@ service cloud.firestore {
         && data.createdAt == request.time;
     }
 
+    function validTradeContact(data) {
+      return data.keys().hasOnly(['email', 'whatsapp'])
+        && data.keys().hasAll(['email', 'whatsapp'])
+        && data.email is string && data.email.size() > 0 && data.email.size() <= 254
+        && data.email == request.auth.token.email
+        && data.whatsapp is string && data.whatsapp.matches('^\\+[1-9][0-9]{7,14}$');
+    }
+
     match /users/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null && request.auth.uid == userId
@@ -168,12 +176,40 @@ service cloud.firestore {
       allow create: if request.auth != null && validTrade(request.resource.data);
       allow update: if request.auth != null
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
-        && resource.data.status == 'pending'
-        && ((request.auth.uid == resource.data.sender.uid
-            && request.resource.data.status == 'cancelled')
-          || (request.auth.uid == resource.data.recipient.uid
+        && ((resource.data.status == 'pending'
+            && ((request.auth.uid == resource.data.sender.uid
+                && request.resource.data.status == 'cancelled')
+              || (request.auth.uid == resource.data.recipient.uid
+                && request.resource.data.status in ['rejected', 'negotiating'])))
+          || (resource.data.status == 'negotiating'
+            && request.auth.uid in resource.data.participantIds
             && request.resource.data.status == 'rejected'));
       allow delete: if false;
+
+      match /contacts/{contactUid} {
+        function tradePath() {
+          return /databases/$(database)/documents/trades/$(tradeId);
+        }
+        allow read: if request.auth != null
+          && exists(tradePath())
+          && request.auth.uid in get(tradePath()).data.participantIds
+          && get(tradePath()).data.status == 'negotiating';
+        allow create: if request.auth != null
+          && request.auth.uid == contactUid
+          && validTradeContact(request.resource.data)
+          && existsAfter(tradePath())
+          && ((getAfter(tradePath()).data.status == 'pending'
+              && getAfter(tradePath()).data.sender.uid == request.auth.uid)
+            || (getAfter(tradePath()).data.status == 'negotiating'
+              && request.auth.uid in getAfter(tradePath()).data.participantIds));
+        allow update: if request.auth != null
+          && request.auth.uid == contactUid
+          && exists(tradePath())
+          && get(tradePath()).data.status == 'negotiating'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'whatsapp'])
+          && validTradeContact(request.resource.data);
+        allow delete: if false;
+      }
     }
   }
 }
