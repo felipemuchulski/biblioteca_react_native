@@ -30,15 +30,20 @@ const CONDITION_VALUES: Record<
   },
 };
 
-type BookAboutCardProps = Pick<Book, "bookCondition" | "bookConditionNote">;
+interface IBookAboutCardProps extends Pick<
+  Book,
+  "bookCondition" | "bookConditionNote"
+> {}
 
-export function BookAboutCard({
-  bookCondition,
-  bookConditionNote,
-}: BookAboutCardProps) {
+const BookAboutCard = (props: IBookAboutCardProps) => {
+  const { bookCondition, bookConditionNote } = props;
   const bookConditionInfos = bookCondition
     ? CONDITION_VALUES[bookCondition]
     : null;
+  let conditionLabelStyle: { color: string } = styles.conditionDonationLabel;
+  if (bookConditionInfos?.color === AppColors.exchangeText) {
+    conditionLabelStyle = styles.conditionExchangeLabel;
+  }
 
   if (
     (isEmptyObject(bookConditionInfos) || bookConditionInfos === null) &&
@@ -57,12 +62,7 @@ export function BookAboutCard({
               size={20}
               color={bookConditionInfos?.color}
             />
-            <Text
-              style={[
-                styles.conditionLabel,
-                { color: bookConditionInfos?.color },
-              ]}
-            >
+            <Text style={[styles.conditionLabel, conditionLabelStyle]}>
               {bookConditionInfos?.label}
             </Text>
           </View>
@@ -78,17 +78,15 @@ export function BookAboutCard({
       </View>
     </View>
   );
-}
+};
+
+export default BookAboutCard;
 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: AppColors.white,
     borderRadius: 18,
     padding: 16,
-    shadowColor: AppColors.darkBlue,
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
   conditionRow: {
@@ -98,6 +96,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   conditionLabel: { fontSize: 14, fontWeight: "700" },
+  conditionDonationLabel: { color: AppColors.donationText },
+  conditionExchangeLabel: { color: AppColors.exchangeText },
   note: { fontSize: 16, lineHeight: 24, color: AppColors.black },
   title: {
     fontSize: 20,

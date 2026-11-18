@@ -40,7 +40,7 @@ service cloud.firestore {
     }
 
     // Campos opcionais para manter compatibilidade com perfis antigos.
-    // O formato de cada objeto será definido no fluxo de cadastro de livros.
+    // O formato de cada objeto sera definido no fluxo de cadastro de livros.
     function validBookLists(data) {
       return (!('books' in data) || data.books is list)
         && (!('likedBooks' in data) || data.likedBooks is list);

@@ -4,7 +4,7 @@ import { StyleSheet, TouchableOpacity } from "react-native";
 
 import { AppColors } from "@/constants/colors";
 
-export function ScreenBackButton() {
+const ScreenBackButton = () => {
   const router = useRouter();
 
   const handleGoBack = () => {
@@ -14,7 +14,6 @@ export function ScreenBackButton() {
 
   return (
     <TouchableOpacity
-      accessibilityRole="button"
       accessibilityLabel="Voltar"
       onPress={handleGoBack}
       style={styles.button}
@@ -22,7 +21,9 @@ export function ScreenBackButton() {
       <Ionicons name="arrow-back" size={22} color={AppColors.darkBlue} />
     </TouchableOpacity>
   );
-}
+};
+
+export default ScreenBackButton;
 
 const styles = StyleSheet.create({
   button: {

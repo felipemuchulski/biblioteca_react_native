@@ -3,8 +3,6 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE, type MapPressEvent, type Region } from "react-native-maps";
-import { SafeAreaView } from "react-native-safe-area-context";
-
 import { AppColors } from "@/constants/colors";
 import { publishAddressSelection, type SelectedLocation } from "@/utils/address-selection";
 
@@ -31,9 +29,9 @@ export default function AddressPickerScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+    <View style={styles.safe}>
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Voltar" onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity accessibilityLabel="Voltar" onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={22} color={AppColors.darkBlue} />
         </TouchableOpacity>
         <View style={styles.headerText}>
@@ -62,7 +60,6 @@ export default function AddressPickerScreen() {
           <Text style={styles.hint}>Nenhum local selecionado</Text>
         )}
         <TouchableOpacity
-          accessibilityRole="button"
           disabled={!selectedLocation}
           onPress={handleConfirm}
           style={[styles.confirmButton, !selectedLocation && styles.confirmDisabled]}
@@ -70,12 +67,12 @@ export default function AddressPickerScreen() {
           <Text style={styles.confirmText}>Usar este local</Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: AppColors.background },
+  safe: { flex: 1, paddingTop: 24, backgroundColor: AppColors.background },
   header: { minHeight: 64, flexDirection: "row", alignItems: "center", paddingHorizontal: 14, gap: 8 },
   backButton: { width: 40, height: 44, justifyContent: "center" },
   headerText: { flex: 1 },

@@ -5,21 +5,22 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { AppColors } from "@/constants/colors";
 import { useProfile } from "@/hooks/use-profile";
 
-type Props = {
+interface ICustomHeaderProps {
   isToShowBackArrow?: boolean;
   backArrowRoute?: Href;
   isToShowLike?: boolean;
   isLiked?: boolean;
   onLikePress?: () => void;
-};
+}
 
-export function CustomHeader({
-  isToShowBackArrow = false,
-  backArrowRoute,
-  isToShowLike = false,
-  isLiked = false,
-  onLikePress,
-}: Props) {
+const CustomHeader = (props: ICustomHeaderProps) => {
+  const {
+    isToShowBackArrow = false,
+    backArrowRoute,
+    isToShowLike = false,
+    isLiked = false,
+    onLikePress,
+  } = props;
   const router = useRouter();
   const { loading, user } = useProfile();
 
@@ -27,7 +28,6 @@ export function CustomHeader({
     <View style={styles.container}>
       {isToShowBackArrow ? (
         <TouchableOpacity
-          accessibilityRole="button"
           accessibilityLabel="Voltar"
           onPress={() =>
             backArrowRoute ? router.push(backArrowRoute) : router.back()
@@ -38,7 +38,6 @@ export function CustomHeader({
         </TouchableOpacity>
       ) : (
         <TouchableOpacity
-          accessibilityRole="button"
           accessibilityLabel="Meu perfil"
           disabled={loading}
           onPress={() => router.push(user ? "/profile" : "/login")}
@@ -51,16 +50,15 @@ export function CustomHeader({
           />
         </TouchableOpacity>
       )}
-      <Text style={styles.logo}>
-        <TouchableOpacity style={styles.logoIcon}>
+      <View style={styles.logo}>
+        <View style={styles.logoIcon}>
           <Ionicons name="book-outline" size={17} color={AppColors.darkBlue} />
-        </TouchableOpacity>
-        Livroei
-      </Text>
+        </View>
+        <Text style={styles.logoText}>Livroei</Text>
+      </View>
       <View style={styles.actions}>
         {isToShowLike ? (
           <TouchableOpacity
-            accessibilityRole="button"
             accessibilityLabel={isLiked ? "Remover dos favoritos" : "Favoritar"}
             disabled={!onLikePress}
             onPress={onLikePress}
@@ -85,7 +83,9 @@ export function CustomHeader({
       </View>
     </View>
   );
-}
+};
+
+export default CustomHeader;
 
 const styles = StyleSheet.create({
   container: {
@@ -96,6 +96,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   logo: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  logoText: {
     fontSize: 22,
     fontWeight: "800",
     color: AppColors.darkBlue,

@@ -1,19 +1,17 @@
-import { BookAboutCard } from "@/components/book-details/BookAboutCard";
-import { BookCategoryList } from "@/components/book-details/BookCategoryList";
-import { BookImagesCarousel } from "@/components/book-details/BookImagesCarousel";
-import { BookOwnerCard } from "@/components/book-details/BookOwnerCard";
-import { BookTradeButton } from "@/components/book-details/BookTradeButton";
-import { BookTradeInfoCard } from "@/components/book-details/BookTradeInfoCard";
-import { BookTypeBadge } from "@/components/book-details/BookTypeBadge";
-import { CustomHeader } from "@/components/common/CustomHeader";
+import BookAboutCard from "@/components/book-details/BookAboutCard";
+import BookCategoryList from "@/components/book-details/BookCategoryList";
+import BookImagesCarousel from "@/components/book-details/BookImagesCarousel";
+import BookOwnerCard from "@/components/book-details/BookOwnerCard";
+import BookTradeButton from "@/components/book-details/BookTradeButton";
+import BookTradeInfoCard from "@/components/book-details/BookTradeInfoCard";
+import BookTypeBadge from "@/components/book-details/BookTypeBadge";
+import CustomHeader from "@/components/common/CustomHeader";
 import { AppColors } from "@/constants/colors";
 import { useBooks } from "@/contexts/books-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
 export default function BookDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { books } = useBooks();
@@ -31,9 +29,9 @@ export default function BookDetailScreen() {
 
   if (!book) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <View style={styles.safe}>
         <Text style={styles.notFound}>Livro não encontrado.</Text>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -42,14 +40,13 @@ export default function BookDetailScreen() {
   const isExchange = book.type === "exchange";
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <View style={styles.safe}>
       <CustomHeader isToShowBackArrow backArrowRoute="/" isToShowLike />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.imageContainer}>
           <Image
             source={{ uri: mainImage }}
             style={styles.cover}
-            defaultSource={require("@/assets/images/icon.png")}
           />
           <BookTypeBadge
             type="pagination"
@@ -111,12 +108,12 @@ export default function BookDetailScreen() {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: AppColors.background },
+  safe: { flex: 1, paddingTop: 24, backgroundColor: AppColors.background },
   content: { alignItems: "center", padding: 20, gap: 12 },
   cover: {
     width: "100%",

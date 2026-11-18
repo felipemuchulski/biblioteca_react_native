@@ -2,36 +2,36 @@ import { AppColors } from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 import {
   ActivityIndicator,
-  Pressable,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 
-type BookTradeButtonProps = {
+interface IBookTradeButtonProps {
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
   showHelpButtonOnSide?: boolean;
-};
+}
 
-export function BookTradeButton({
-  onPress,
-  loading = false,
-  disabled = false,
-  showHelpButtonOnSide = true,
-}: BookTradeButtonProps) {
+const BookTradeButton = (props: IBookTradeButtonProps) => {
+  const {
+    onPress,
+    loading = false,
+    disabled = false,
+    showHelpButtonOnSide = true,
+  } = props;
   const inactive = disabled || loading;
 
   return (
     <View style={styles.wrapper}>
-      <Pressable
+      <TouchableOpacity
         onPress={onPress}
         disabled={inactive}
-        style={({ pressed }) => [
+        style={[
           styles.button,
-          { flex: showHelpButtonOnSide ? 1 : undefined },
-          pressed && styles.pressed,
+          showHelpButtonOnSide && styles.buttonWithInfo,
           inactive && styles.disabled,
         ]}
       >
@@ -43,23 +43,24 @@ export function BookTradeButton({
             <Text style={styles.buttonLabel}>Oferecer livro para trocar</Text>
           </>
         )}
-      </Pressable>
+      </TouchableOpacity>
       {showHelpButtonOnSide && (
-        <Pressable
+        <TouchableOpacity
           onPress={onPress}
           disabled={inactive}
-          style={({ pressed }) => [
+          style={[
             styles.infoButton,
-            pressed && styles.pressed,
             inactive && styles.disabled,
           ]}
         >
           <Ionicons name="information" size={25} color={AppColors.black} />
-        </Pressable>
+        </TouchableOpacity>
       )}
     </View>
   );
-}
+};
+
+export default BookTradeButton;
 
 const styles = StyleSheet.create({
   wrapper: { gap: 12, flexDirection: "row", alignItems: "center" },
@@ -73,6 +74,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 10,
   },
+  buttonWithInfo: { flex: 1 },
   infoButton: {
     alignItems: "center",
     justifyContent: "center",
@@ -82,7 +84,6 @@ const styles = StyleSheet.create({
     borderColor: AppColors.lightBlue,
     borderWidth: 2,
   },
-  pressed: { backgroundColor: AppColors.darkBlue },
   disabled: { opacity: 0.5 },
   buttonLabel: { color: AppColors.white, fontSize: 16, fontWeight: "700" },
 });

@@ -3,6 +3,8 @@ import { signOut } from "firebase/auth";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,8 +12,8 @@ import {
   View,
 } from "react-native";
 
-import { ProfileEditor } from "@/components/profile/ProfileEditor";
-import { ScreenBackButton } from "@/components/navigation/ScreenBackButton";
+import ProfileEditor from "@/components/profile/ProfileEditor";
+import ScreenBackButton from "@/components/navigation/ScreenBackButton";
 import { AppColors } from "@/constants/colors";
 import { useProfile } from "@/hooks/use-profile";
 import { formatAddress } from "@/utils/address";
@@ -54,7 +56,14 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+    <ScrollView
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+    >
       <ScreenBackButton />
       <View style={styles.center}>
         <View style={styles.avatar}>
@@ -101,12 +110,14 @@ export default function ProfileScreen() {
       <TouchableOpacity onPress={() => void handleLogout()} style={styles.logout}>
         <Text style={styles.logoutText}>Sair da conta</Text>
       </TouchableOpacity>
-      {!!logoutError && <Text accessibilityRole="alert" style={styles.error}>{logoutError}</Text>}
+      {!!logoutError && <Text style={styles.error}>{logoutError}</Text>}
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1 },
   content: { flexGrow: 1, padding: 24, gap: 24, backgroundColor: AppColors.background },
   center: { alignItems: "center", justifyContent: "center", gap: 12, paddingVertical: 24 },
   avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: AppColors.border, alignItems: "center", justifyContent: "center" },

@@ -11,12 +11,13 @@ const FILTERS: { key: FilterType; label: string }[] = [
   { key: "fiction", label: "Ficção" },
 ];
 
-interface HomeBookFiltersProps {
+interface IHomeBookFiltersProps {
   selected: FilterType;
   onSelect: (filter: FilterType) => void;
 }
 
-export function HomeBookFilters({ selected, onSelect }: HomeBookFiltersProps) {
+const HomeBookFilters = (props: IHomeBookFiltersProps) => {
+  const { selected, onSelect } = props;
   return (
     <ScrollView
       horizontal
@@ -40,7 +41,9 @@ export function HomeBookFilters({ selected, onSelect }: HomeBookFiltersProps) {
       })}
     </ScrollView>
   );
-}
+};
+
+export default HomeBookFilters;
 
 const styles = StyleSheet.create({
   container: { paddingHorizontal: 16, gap: 8, paddingVertical: 4 },

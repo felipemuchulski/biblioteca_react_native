@@ -10,17 +10,18 @@ import {
 
 import { AppColors } from "@/constants/colors";
 import { Book } from "@/types/book";
-import { BookTypeBadge } from "./BookTypeBadge";
+import BookTypeBadge from "./BookTypeBadge";
 
 const CARD_WIDTH = (Dimensions.get("window").width - 48) / 2;
 
-interface BookGridCardProps {
+interface IBookGridCardProps {
   book: Book;
   onPress: (book: Book) => void;
   showDistance?: boolean;
 }
 
-export function BookGridCard({ book, onPress, showDistance = true }: BookGridCardProps) {
+const BookGridCard = (props: IBookGridCardProps) => {
+  const { book, onPress, showDistance = true } = props;
   return (
     <TouchableOpacity
       style={styles.card}
@@ -31,7 +32,6 @@ export function BookGridCard({ book, onPress, showDistance = true }: BookGridCar
         <Image
           source={{ uri: book.thumbnail }}
           style={styles.cover}
-          defaultSource={require("@/assets/images/icon.png")}
         />
         <View style={styles.badgeOverlay}>
           <BookTypeBadge type={book.type} size="sm" />
@@ -55,7 +55,9 @@ export function BookGridCard({ book, onPress, showDistance = true }: BookGridCar
       </View>
     </TouchableOpacity>
   );
-}
+};
+
+export default BookGridCard;
 
 const styles = StyleSheet.create({
   card: {
@@ -63,10 +65,6 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.white,
     borderRadius: 16,
     overflow: "hidden",
-    shadowColor: AppColors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
     elevation: 3,
     marginBottom: 12,
   },

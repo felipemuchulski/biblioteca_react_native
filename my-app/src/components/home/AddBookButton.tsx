@@ -4,20 +4,21 @@ import { StyleSheet, TouchableOpacity } from "react-native";
 
 import { AppColors } from "@/constants/colors";
 
-export function AddBookButton() {
+const AddBookButton = () => {
   const router = useRouter();
 
   return (
     <TouchableOpacity
-      accessibilityRole="button"
       accessibilityLabel="Cadastrar um livro"
-      onPress={() => router.push("/book-register")}
+      onPress={() => router.push("/register-book")}
       style={styles.button}
     >
       <Ionicons name="add" size={22} color={AppColors.white} />
     </TouchableOpacity>
   );
-}
+};
+
+export default AddBookButton;
 
 const styles = StyleSheet.create({
   button: {

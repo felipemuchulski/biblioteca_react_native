@@ -2,17 +2,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    ActivityIndicator,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
-import { BookCard } from "@/components/book-details/BookCard";
-import { HomeHeader } from "@/components/home/HomeHeader";
+import BookCard from "@/components/book-details/BookCard";
+import CustomHeader from "@/components/common/CustomHeader";
 import { AppColors } from "@/constants/colors";
 import { useBooks } from "@/contexts/books-context";
 import { useProfile } from "@/hooks/use-profile";
@@ -28,17 +26,26 @@ export default function HomeScreen() {
     retry: retryBooks,
   } = useBooks();
   const { profile, user } = useProfile();
-  const [favoriteOverrides, setFavoriteOverrides] = useState<Record<string, boolean>>({});
-  const books = nearbyBooks.filter((book) => book.available).map((book) => ({
-    ...book, isFavorite: favoriteOverrides[book.id] ?? book.isFavorite,
-  }));
+  const [favoriteOverrides, setFavoriteOverrides] = useState<
+    Record<string, boolean>
+  >({});
+  const books = nearbyBooks
+    .filter((book) => book.available)
+    .map((book) => ({
+      ...book,
+      isFavorite: favoriteOverrides[book.id] ?? book.isFavorite,
+    }));
   const visibleBooks = user
     ? books.filter((book) => book.ownerId !== user.uid)
     : books.slice(0, 5);
 
   const toggleFavorite = (id: string) => {
     const book = books.find((item) => item.id === id);
-    if (book) setFavoriteOverrides((previous) => ({ ...previous, [id]: !book.isFavorite }));
+    if (book)
+      setFavoriteOverrides((previous) => ({
+        ...previous,
+        [id]: !book.isFavorite,
+      }));
   };
 
   const handlePress = (book: Book) => {
@@ -50,8 +57,8 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      <HomeHeader />
+    <View style={styles.safe}>
+      <CustomHeader />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
@@ -62,7 +69,7 @@ export default function HomeScreen() {
           <Ionicons name="location-sharp" size={14} color={AppColors.blue} />
           <Text style={styles.locationText}>
             {profile?.address?.city
-              ? `Livros perto de ${[profile.address.neighborhood, profile.address.city].filter(Boolean).join(', ')}`
+              ? `Livros perto de ${[profile.address.neighborhood, profile.address.city].filter(Boolean).join(", ")}`
               : "Selecione sua localização em Meu perfil"}
           </Text>
         </View>
@@ -113,19 +120,20 @@ export default function HomeScreen() {
                 <Text style={styles.retryText}>Tentar novamente</Text>
               </TouchableOpacity>
             </View>
-          ) : visibleBooks.length ? visibleBooks.map((book) => (
-            <BookCard
-              key={book.id}
-              book={book}
-              onToggleFavorite={toggleFavorite}
-              onPress={handlePress}
-            />
-          )) : (
+          ) : visibleBooks.length ? (
+            visibleBooks.map((book) => (
+              <BookCard
+                key={book.id}
+                book={book}
+                onToggleFavorite={toggleFavorite}
+                onPress={handlePress}
+              />
+            ))
+          ) : (
             <Text style={styles.empty}>Nenhum livro cadastrado ainda.</Text>
           )}
           {!booksLoading && !booksError && !user && visibleBooks.length > 0 && (
             <TouchableOpacity
-              accessibilityRole="link"
               onPress={() => router.push("/login")}
               style={styles.signupPrompt}
             >
@@ -135,14 +143,13 @@ export default function HomeScreen() {
             </TouchableOpacity>
           )}
         </View>
-
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: AppColors.background },
+  safe: { flex: 1, paddingTop: 24, backgroundColor: AppColors.background },
   scroll: { flex: 1 },
   content: { paddingBottom: 32 },
 
@@ -221,7 +228,12 @@ const styles = StyleSheet.create({
   cardList: { paddingHorizontal: 16, marginTop: 12 },
   empty: { color: AppColors.graySecondary, textAlign: "center", marginTop: 16 },
   loadError: { alignItems: "center", gap: 12 },
-  retryButton: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, backgroundColor: AppColors.blue },
+  retryButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: AppColors.blue,
+  },
   retryText: { color: AppColors.white, fontWeight: "700" },
   signupPrompt: {
     marginTop: 16,
@@ -235,5 +247,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
-
 });

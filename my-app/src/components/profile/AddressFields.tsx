@@ -4,13 +4,14 @@ import { AppColors } from "@/constants/colors";
 import { addressFields, type Address } from "@/utils/address";
 import { fetchAddressByPostalCode } from "../../../database/users";
 
-type Props = {
+interface IAddressFieldsProps {
   value: Address;
   onChange: (value: Address) => void;
   disabled?: boolean;
-};
+}
 
-const AddressFields = ({ value, onChange, disabled }: Props) => {
+const AddressFields = (props: IAddressFieldsProps) => {
+  const { value, onChange, disabled } = props;
   const [postalCodeError, setPostalCodeError] = useState("");
   const requestId = useRef(0);
   const latestValue = useRef(value);
@@ -89,11 +90,10 @@ const AddressFields = ({ value, onChange, disabled }: Props) => {
                   ? "Opcional"
                   : label
             }
-            placeholderTextColor={AppColors.graySecondary}
             style={styles.input}
           />
           {key === "postalCode" && postalCodeError ? (
-            <Text accessibilityRole="alert" style={styles.error}>
+            <Text style={styles.error}>
               {postalCodeError}
             </Text>
           ) : null}

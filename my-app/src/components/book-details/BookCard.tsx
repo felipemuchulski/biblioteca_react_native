@@ -3,15 +3,16 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { AppColors } from "@/constants/colors";
 import { Book } from "@/types/book";
-import { BookTypeBadge } from "./BookTypeBadge";
+import BookTypeBadge from "./BookTypeBadge";
 
-interface BookCardProps {
+interface IBookCardProps {
   book: Book;
   onToggleFavorite: (id: string) => void;
   onPress: (book: Book) => void;
 }
 
-export function BookCard({ book, onToggleFavorite, onPress }: BookCardProps) {
+const BookCard = (props: IBookCardProps) => {
+  const { book, onToggleFavorite, onPress } = props;
   return (
     <TouchableOpacity
       style={styles.card}
@@ -21,14 +22,12 @@ export function BookCard({ book, onToggleFavorite, onPress }: BookCardProps) {
       <Image
         source={{ uri: book.thumbnail }}
         style={styles.cover}
-        defaultSource={require("@/assets/images/icon.png")}
       />
       <View style={styles.info}>
         <View style={styles.topRow}>
           <BookTypeBadge type={book.type} />
           <TouchableOpacity
             onPress={() => onToggleFavorite(book.id)}
-            hitSlop={8}
           >
             <Ionicons
               name={book.isFavorite ? "heart" : "heart-outline"}
@@ -66,7 +65,9 @@ export function BookCard({ book, onToggleFavorite, onPress }: BookCardProps) {
       </View>
     </TouchableOpacity>
   );
-}
+};
+
+export default BookCard;
 
 const styles = StyleSheet.create({
   card: {
@@ -76,10 +77,6 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 12,
     gap: 12,
-    shadowColor: AppColors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
     elevation: 3,
   },
   cover: {

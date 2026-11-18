@@ -1,9 +1,9 @@
-import { CustomHeader } from "@/components/common/CustomHeader";
-import { ConditionSelector } from "@/components/book-register/ConditionSelector";
-import { BookFormField } from "@/components/book-register/BookFormField";
-import { BookTypeSelector } from "@/components/book-register/BookTypeSelector";
-import { PhotoPicker } from "@/components/book-register/PhotoPicker";
-import { ConfirmBookRegisterButton } from "@/components/book-register/ConfirmBookRegisterButton";
+import CustomHeader from "@/components/common/CustomHeader";
+import ConditionSelector from "@/components/book-register/ConditionSelector";
+import BookFormField from "@/components/book-register/BookFormField";
+import BookTypeSelector from "@/components/book-register/BookTypeSelector";
+import PhotoPicker from "@/components/book-register/PhotoPicker";
+import ConfirmBookRegisterButton from "@/components/book-register/ConfirmBookRegisterButton";
 import { AppColors } from "@/constants/colors";
 import type { BookCondition, BookType } from "@/types/book";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,10 +21,6 @@ import {
   Text,
   View,
 } from "react-native";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
 import { useIsAuthenticated } from "@/hooks/use-is-authenticated";
 import { useProfile } from "@/hooks/use-profile";
 
@@ -55,7 +51,6 @@ export default function NewBookScreen() {
   const isAuthenticated = useIsAuthenticated();
   const { loading: authLoading } = useProfile();
   const alertShown = useRef(false);
-  const insets = useSafeAreaInsets();
   const { tradeWithBookId } = useLocalSearchParams<{
     tradeWithBookId?: string | string[];
   }>();
@@ -171,7 +166,7 @@ export default function NewBookScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <View style={styles.safe}>
       <CustomHeader isToShowBackArrow backArrowRoute="/" isToShowLike />
       <KeyboardAvoidingView
         style={styles.flex}
@@ -180,13 +175,13 @@ export default function NewBookScreen() {
         <ScrollView
           contentContainerStyle={[
             styles.content,
-            { paddingBottom: insets.bottom + 32 },
+            { paddingBottom: 32 },
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.intro}>
-            <Text accessibilityRole="header" style={styles.pageTitle}>
+            <Text style={styles.pageTitle}>
               Cadastrar livro
             </Text>
             <Text style={styles.pageSubtitle}>
@@ -196,7 +191,7 @@ export default function NewBookScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text accessibilityRole="header" style={styles.sectionTitle}>
+            <Text style={styles.sectionTitle}>
               Sobre o livro
             </Text>
             <BookFormField
@@ -207,7 +202,6 @@ export default function NewBookScreen() {
                 clearError("title");
               }}
               error={errors.title}
-              returnKeyType="next"
               autoCapitalize="sentences"
             />
             <BookFormField
@@ -218,7 +212,6 @@ export default function NewBookScreen() {
                 clearError("author");
               }}
               error={errors.author}
-              returnKeyType="next"
               autoCapitalize="words"
             />
             <BookFormField
@@ -248,7 +241,7 @@ export default function NewBookScreen() {
           />
 
           <View style={styles.section}>
-            <Text accessibilityRole="header" style={styles.sectionTitle}>
+            <Text style={styles.sectionTitle}>
               Como está o seu exemplar?
             </Text>
             <ConditionSelector
@@ -290,13 +283,13 @@ export default function NewBookScreen() {
           />
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  safe: { flex: 1, backgroundColor: AppColors.background },
+  safe: { flex: 1, paddingTop: 24, backgroundColor: AppColors.background },
   content: { paddingHorizontal: 20, paddingTop: 8, gap: 28 },
   intro: { gap: 6 },
   pageTitle: {

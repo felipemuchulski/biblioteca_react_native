@@ -1,5 +1,3 @@
-import { Platform } from "react-native";
-
 type CloudinaryUploadResponse = {
   secure_url?: string;
   error?: { message?: string };
@@ -30,18 +28,11 @@ async function uploadImage(uri: string): Promise<string> {
         : "image/jpeg";
 
   const filename = `book-${Date.now()}.${extension || "jpg"}`;
-  if (Platform.OS === "web") {
-    const fileResponse = await fetch(uri);
-    if (!fileResponse.ok) {
-      throw new Error("Não foi possível ler a imagem selecionada.");
-    }
-    form.append("file", await fileResponse.blob(), filename);
-  } else {
-    form.append(
-      "file",
-      { uri, name: filename, type: mimeType } as unknown as Blob,
-    );
-  }
+  form.append("file", {
+    uri,
+    name: filename,
+    type: mimeType,
+  } as unknown as Blob);
   form.append("upload_preset", uploadPreset);
 
   const response = await fetch(
@@ -58,7 +49,8 @@ async function uploadImage(uri: string): Promise<string> {
 
   if (!response.ok || !result.secure_url) {
     throw new Error(
-      result.error?.message || "Não foi possível enviar uma imagem ao Cloudinary.",
+      result.error?.message ||
+        "Não foi possível enviar uma imagem ao Cloudinary.",
     );
   }
 
@@ -69,4 +61,3 @@ export function uploadBookImages(uris: string[]): Promise<string[]> {
   if (uris.length === 0) return Promise.resolve([]);
   return Promise.all(uris.map(uploadImage));
 }
-

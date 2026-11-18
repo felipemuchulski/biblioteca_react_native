@@ -5,7 +5,7 @@ import { AppColors } from "@/constants/colors";
 import { BookType } from "@/types/book";
 import { formatCarouselPagination } from "@/utils/formatter";
 
-interface BookTypeBadgeProps {
+interface IBookTypeBadgeProps {
   type: BookType;
   size?: "sm" | "md";
   index?: number;
@@ -39,12 +39,8 @@ const BOOK_TYPE_CONFIG: Record<BookType, BookTypeBadgeConfig> = {
     textColor: AppColors.blue,
   },
 };
-export function BookTypeBadge({
-  type,
-  size = "md",
-  index = 0,
-  maxLength = 0,
-}: BookTypeBadgeProps) {
+const BookTypeBadge = (props: IBookTypeBadgeProps) => {
+  const { type, size = "md", index = 0, maxLength = 0 } = props;
   const bookBadgeConfig = BOOK_TYPE_CONFIG[type];
   const isSmall = size === "sm";
   const isPagination = type === "pagination";
@@ -54,13 +50,26 @@ export function BookTypeBadge({
     maxLength,
   );
 
+  const badgeBackgroundStyle =
+    type === "exchange"
+      ? styles.badgeExchange
+      : type === "pagination"
+        ? styles.badgePagination
+        : styles.badgeDonation;
+  const textColorStyle =
+    type === "exchange"
+      ? styles.textExchange
+      : type === "pagination"
+        ? styles.textPagination
+        : styles.textDonation;
+
   if (type === "pagination" && !index && !maxLength) return null;
 
   return (
     <View
       style={[
         styles.badge,
-        { backgroundColor: bookBadgeConfig.backgroundColor },
+        badgeBackgroundStyle,
         isSmall && styles.badgeSm,
         isPagination && styles.pagination,
       ]}
@@ -70,18 +79,14 @@ export function BookTypeBadge({
         size={isSmall ? 10 : 12}
         color={bookBadgeConfig.textColor}
       />
-      <Text
-        style={[
-          styles.text,
-          { color: bookBadgeConfig.textColor },
-          isSmall && styles.textSm,
-        ]}
-      >
+      <Text style={[styles.text, textColorStyle, isSmall && styles.textSm]}>
         {type !== "pagination" ? bookBadgeConfig.label : text}
       </Text>
     </View>
   );
-}
+};
+
+export default BookTypeBadge;
 
 const styles = StyleSheet.create({
   badge: {
@@ -98,6 +103,12 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   text: { fontSize: 12, fontWeight: "600" },
+  badgeDonation: { backgroundColor: AppColors.donationBg },
+  badgeExchange: { backgroundColor: AppColors.exchangeBg },
+  badgePagination: { backgroundColor: AppColors.white },
+  textDonation: { color: AppColors.donationText },
+  textExchange: { color: AppColors.exchangeText },
+  textPagination: { color: AppColors.blue },
   textSm: { fontSize: 10 },
   pagination: {
     minWidth: 60,
@@ -105,7 +116,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 14,
     right: 14,
-    fontVariant: ["tabular-nums"],
     justifyContent: "space-between",
   },
 });
