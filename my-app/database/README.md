@@ -95,9 +95,9 @@ A tela `/profile-books` consulta os livros do próprio usuário em lotes de 20, 
 Contrato dos documentos:
 
 - `books/{id}`: `ownerId` (UID do dono), `title`, `author`, `type` (`donation` ou `exchange`) e `available` (boolean).
-- `trades/{id}`: `participantIds` (lista de UIDs dos participantes), `offeredBookTitle`, `requestedBookTitle`, `status` (`pending`, `accepted`, `completed`, `cancelled` ou `rejected`) e `createdAt` (timestamp).
+- `trades/{id}`: `participantIds`, remetente e destinatário (UID e nome de exibição), snapshots dos livros oferecidos e solicitado (ID, título, autor e miniatura), `successConfirmedBy`, `status` e `createdAt`. Contatos ficam em `trades/{id}/contacts/{uid}` e só podem ser lidos pelos participantes após o aceite. Quando ambos confirmam sucesso, o status passa a `completed` e os documentos dos livros recebem `available: false`, `traded: true` e `completedTradeId`; continuam no banco, mas saem da lista de livros cadastrados do dono. Qualquer participante pode mudar uma negociação para `rejected`, mesmo que o outro já tenha confirmado sucesso.
 
-A tela de livros cadastrados consulta `ownerId == uid`; a tela de trocas usa `participantIds array-contains uid`. A página inicial lê a coleção de livros para qualquer usuário autenticado, enquanto as trocas continuam visíveis apenas aos participantes. O cadastro cria documentos de livros pelo app; as regras permitem que o dono os exclua, mas ainda bloqueiam atualizações. O fluxo de troca ainda não grava documentos pelo app.
+A tela de livros cadastrados consulta `ownerId == uid`; a tela de trocas usa `participantIds array-contains uid`. A página inicial lê a coleção de livros para qualquer usuário autenticado, enquanto as trocas continuam visíveis apenas aos participantes. O cadastro cria documentos de livros pelo app; as regras permitem que o dono os exclua e permitem marcar livros como negociados apenas durante a conclusão de uma troca válida. O fluxo cria solicitações pendentes, permite cancelar ou recusar, aceitar para iniciar a negociação, declinar ou confirmar sucesso por ambos os participantes. Publique `database/firestore.rules` para habilitar esse fluxo e a leitura condicional dos contatos.
 
 ## Validação das novas telas
 

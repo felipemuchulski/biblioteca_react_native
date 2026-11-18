@@ -5,6 +5,7 @@ export type BookCondition = "new" | "like_new" | "good" | "worn";
 
 export interface Book {
   id: string;
+  ownerId?: string;
   title: string;
   author: string;
   images: string[];

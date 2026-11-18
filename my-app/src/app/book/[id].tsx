@@ -8,7 +8,7 @@ import { BookTypeBadge } from "@/components/book-details/BookTypeBadge";
 import { AppColors } from "@/constants/colors";
 import { useBooks } from "@/contexts/books-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,6 +17,7 @@ import { BookHeader } from "../../components/book-details/BookHeader";
 export default function BookDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { books } = useBooks();
+  const router = useRouter();
   const book = books?.find((book) => book.id === id);
 
   const [selectedImage, setSelectedImage] = useState<string>(
@@ -103,7 +104,7 @@ export default function BookDetailScreen() {
             <>
               <BookTradeInfoCard ownerName={book.owner} />
               <BookTradeButton
-                onPress={() => console.log("teste")}
+                onPress={() => router.push(`/book/${book.id}/offer`)}
                 disabled={!book.available}
               />
             </>
