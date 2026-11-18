@@ -29,7 +29,7 @@ export default function HomeScreen() {
   } = useBooks();
   const { profile, user } = useProfile();
   const [favoriteOverrides, setFavoriteOverrides] = useState<Record<string, boolean>>({});
-  const books = nearbyBooks.map((book) => ({
+  const books = nearbyBooks.filter((book) => book.available).map((book) => ({
     ...book, isFavorite: favoriteOverrides[book.id] ?? book.isFavorite,
   }));
 
