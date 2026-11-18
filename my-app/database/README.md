@@ -95,9 +95,9 @@ A tela `/profile-books` consulta os livros do próprio usuário em lotes de 20, 
 Contrato dos documentos:
 
 - `books/{id}`: `ownerId` (UID do dono), `title`, `author`, `type` (`donation` ou `exchange`) e `available` (boolean).
-- `trades/{id}`: `participantIds` (lista de UIDs dos participantes), `offeredBookTitle`, `requestedBookTitle`, `status` (`pending`, `accepted`, `completed`, `cancelled` ou `rejected`) e `createdAt` (timestamp).
+- `trades/{id}`: `participantIds`, remetente e destinatário (UID e nome de exibição), snapshots dos livros oferecidos e solicitado (ID, título, autor e miniatura), `status` (`pending`, `cancelled` ou `rejected`) e `createdAt`. Solicitações novas não armazenam endereço, e-mail ou WhatsApp. O remetente pode cancelar enquanto pendente; o destinatário pode recusar. O botão Aceitar está visível, mas ainda não altera o status.
 
-A tela de livros cadastrados consulta `ownerId == uid`; a tela de trocas usa `participantIds array-contains uid`. A página inicial lê a coleção de livros para qualquer usuário autenticado, enquanto as trocas continuam visíveis apenas aos participantes. O cadastro cria documentos de livros pelo app; as regras permitem que o dono os exclua, mas ainda bloqueiam atualizações. O fluxo de troca ainda não grava documentos pelo app.
+A tela de livros cadastrados consulta `ownerId == uid`; a tela de trocas usa `participantIds array-contains uid`. A página inicial lê a coleção de livros para qualquer usuário autenticado, enquanto as trocas continuam visíveis apenas aos participantes. O cadastro cria documentos de livros pelo app; as regras permitem que o dono os exclua, mas ainda bloqueiam atualizações. O fluxo cria solicitações pendentes e permite cancelar ou recusar. Publique `database/firestore.rules` para habilitar a criação e essas transições.
 
 ## Validação das novas telas
 

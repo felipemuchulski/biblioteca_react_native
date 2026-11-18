@@ -79,6 +79,67 @@ service cloud.firestore {
         && data.createdAt == request.time;
     }
 
+    function validTradeBook(book) {
+      return book is map
+        && book.keys().hasOnly(['id', 'title', 'author', 'thumbnail'])
+        && book.keys().hasAll(['id', 'title', 'author', 'thumbnail'])
+        && validText(book.id) && book.id.size() > 0
+        && validText(book.title) && book.title.size() > 0
+        && validText(book.author) && book.author.size() > 0
+        && book.thumbnail is string && book.thumbnail.size() <= 2000;
+    }
+
+    function validTradeBooks(books) {
+      return books is list && books.size() >= 1 && books.size() <= 20
+        && (books.size() < 1 || validTradeBook(books[0]))
+        && (books.size() < 2 || validTradeBook(books[1]))
+        && (books.size() < 3 || validTradeBook(books[2]))
+        && (books.size() < 4 || validTradeBook(books[3]))
+        && (books.size() < 5 || validTradeBook(books[4]))
+        && (books.size() < 6 || validTradeBook(books[5]))
+        && (books.size() < 7 || validTradeBook(books[6]))
+        && (books.size() < 8 || validTradeBook(books[7]))
+        && (books.size() < 9 || validTradeBook(books[8]))
+        && (books.size() < 10 || validTradeBook(books[9]))
+        && (books.size() < 11 || validTradeBook(books[10]))
+        && (books.size() < 12 || validTradeBook(books[11]))
+        && (books.size() < 13 || validTradeBook(books[12]))
+        && (books.size() < 14 || validTradeBook(books[13]))
+        && (books.size() < 15 || validTradeBook(books[14]))
+        && (books.size() < 16 || validTradeBook(books[15]))
+        && (books.size() < 17 || validTradeBook(books[16]))
+        && (books.size() < 18 || validTradeBook(books[17]))
+        && (books.size() < 19 || validTradeBook(books[18]))
+        && (books.size() < 20 || validTradeBook(books[19]));
+    }
+
+    function validTrade(data) {
+      return data.keys().hasOnly([
+          'participantIds', 'sender', 'recipient', 'offeredBooks',
+          'requestedBook', 'status', 'createdAt'
+        ])
+        && data.keys().hasAll([
+          'participantIds', 'sender', 'recipient', 'offeredBooks',
+          'requestedBook', 'status', 'createdAt'
+        ])
+        && data.participantIds is list && data.participantIds.size() == 2
+        && data.sender is map && data.recipient is map
+        && data.sender.keys().hasOnly(['uid', 'displayName'])
+        && data.sender.keys().hasAll(['uid', 'displayName'])
+        && data.recipient.keys().hasOnly(['uid', 'displayName'])
+        && data.recipient.keys().hasAll(['uid', 'displayName'])
+        && data.sender.uid == request.auth.uid
+        && data.recipient.uid is string && data.recipient.uid != request.auth.uid
+        && data.participantIds[0] == data.sender.uid
+        && data.participantIds[1] == data.recipient.uid
+        && validText(data.sender.displayName) && data.sender.displayName.size() > 0
+        && validText(data.recipient.displayName) && data.recipient.displayName.size() > 0
+        && validTradeBooks(data.offeredBooks)
+        && validTradeBook(data.requestedBook)
+        && data.status == 'pending'
+        && data.createdAt == request.time;
+    }
+
     match /users/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null && request.auth.uid == userId
@@ -104,7 +165,15 @@ service cloud.firestore {
 
     match /trades/{tradeId} {
       allow read: if request.auth != null && request.auth.uid in resource.data.participantIds;
-      allow write: if false;
+      allow create: if request.auth != null && validTrade(request.resource.data);
+      allow update: if request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && resource.data.status == 'pending'
+        && ((request.auth.uid == resource.data.sender.uid
+            && request.resource.data.status == 'cancelled')
+          || (request.auth.uid == resource.data.recipient.uid
+            && request.resource.data.status == 'rejected'));
+      allow delete: if false;
     }
   }
 }

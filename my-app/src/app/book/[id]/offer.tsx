@@ -2,12 +2,13 @@ import { ScreenBackButton } from "@/components/navigation/ScreenBackButton";
 import { AppColors } from "@/constants/colors";
 import { useBooks } from "@/contexts/books-context";
 import { useProfile } from "@/hooks/use-profile";
+import { createTrade } from "../../../../database/trades";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
-  Alert,
   Image,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -20,8 +21,11 @@ export default function TradeOfferScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { books, loading } = useBooks();
-  const { user } = useProfile();
+  const { user, profile } = useProfile();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
+  const [feedback, setFeedback] = useState("");
 
   const requestedBook = books.find((book) => book.id === id);
   const myBooks = useMemo(
@@ -30,25 +34,90 @@ export default function TradeOfferScreen() {
   );
 
   const toggleBook = (bookId: string) => {
-    setSelectedIds((current) =>
-      current.includes(bookId)
-        ? current.filter((selectedId) => selectedId !== bookId)
-        : [...current, bookId],
-    );
+    if (!selectedIds.includes(bookId) && selectedIds.length >= 20) {
+      setFeedback("Você pode oferecer até 20 livros em uma solicitação.");
+      return;
+    }
+    setFeedback("");
+    setSelectedIds((current) => current.includes(bookId)
+      ? current.filter((selectedId) => selectedId !== bookId)
+      : [...current, bookId]);
   };
 
   const reviewOffer = () => {
-    const titles = myBooks
-      .filter((book) => selectedIds.includes(book.id))
-      .map((book) => book.title);
-    Alert.alert(
-      "Livros selecionados",
-      `${titles.join(", ")}\n\nO envio de propostas será habilitado em uma próxima etapa.`,
-    );
+    const offeredBooks = myBooks.filter((book) => selectedIds.includes(book.id));
+    if (!requestedBook || !requestedBook.ownerId || !offeredBooks.length) {
+      setFeedback("Não foi possível criar a solicitação. Confira se o livro solicitado e os livros selecionados ainda estão disponíveis.");
+      return;
+    }
+    setFeedback("");
+    setReviewing(true);
+  };
+
+  const submitOffer = async (offeredBooks: typeof myBooks) => {
+    if (!requestedBook?.ownerId) return;
+    setSubmitting(true);
+    try {
+      await createTrade({
+        senderName: profile?.displayName || user?.displayName || "Usuário",
+        recipientId: requestedBook.ownerId,
+        recipientName: requestedBook.owner,
+        offeredBooks: offeredBooks.map(({ id, title, author, thumbnail }) => ({ id, title, author, thumbnail })),
+        requestedBook: {
+          id: requestedBook.id,
+          title: requestedBook.title,
+          author: requestedBook.author,
+          thumbnail: requestedBook.thumbnail,
+        },
+      });
+      setReviewing(false);
+      router.replace("/profile-trades");
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "Tente novamente mais tarde.";
+      setFeedback(`Não foi possível enviar a solicitação. ${message}`);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
+      <Modal
+        visible={reviewing}
+        transparent
+        animationType="fade"
+        onRequestClose={() => !submitting && setReviewing(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.reviewCard}>
+            <Text style={styles.reviewTitle}>Confirmar solicitação de troca</Text>
+            <Text style={styles.reviewLabel}>Você oferece:</Text>
+            {myBooks.filter((book) => selectedIds.includes(book.id)).map((book) => (
+              <Text key={book.id} style={styles.reviewBook}>• {book.title}</Text>
+            ))}
+            <Text style={styles.reviewLabel}>Em troca de:</Text>
+            <Text style={styles.reviewBook}>{requestedBook?.title}</Text>
+            <Text style={styles.reviewNote}>A solicitação será enviada como pendente. O destinatário poderá aceitá-la ou recusá-la.</Text>
+            {!!feedback && <Text accessibilityRole="alert" style={styles.feedback}>{feedback}</Text>}
+            <View style={styles.reviewActions}>
+              <Pressable
+                disabled={submitting}
+                onPress={() => setReviewing(false)}
+                style={({ pressed }) => [styles.reviewButton, styles.backButton, pressed && styles.pressed]}
+              >
+                <Text style={styles.backButtonLabel}>Voltar</Text>
+              </Pressable>
+              <Pressable
+                disabled={submitting}
+                onPress={() => void submitOffer(myBooks.filter((book) => selectedIds.includes(book.id)))}
+                style={({ pressed }) => [styles.reviewButton, styles.confirmButton, submitting && styles.disabled, pressed && styles.pressed]}
+              >
+                <Text style={styles.submitLabel}>{submitting ? "Enviando..." : "Confirmar"}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
       <View style={styles.header}>
         <ScreenBackButton />
         <Text style={styles.headerTitle}>Oferecer troca</Text>
@@ -61,6 +130,7 @@ export default function TradeOfferScreen() {
           Selecione um ou mais livros seus disponíveis para troca
           {requestedBook ? ` por “${requestedBook.title}”.` : "."}
         </Text>
+        {!!feedback && !reviewing && <Text accessibilityRole="alert" style={styles.feedback}>{feedback}</Text>}
 
         {loading ? (
           <Text style={styles.empty}>Carregando seus livros...</Text>
@@ -105,11 +175,11 @@ export default function TradeOfferScreen() {
       <View style={styles.footer}>
         <Pressable
           onPress={reviewOffer}
-          disabled={selectedIds.length === 0}
-          style={({ pressed }) => [styles.submit, selectedIds.length === 0 && styles.disabled, pressed && styles.pressed]}
+          disabled={selectedIds.length === 0 || submitting}
+          style={({ pressed }) => [styles.submit, (selectedIds.length === 0 || submitting) && styles.disabled, pressed && styles.pressed]}
         >
           <Text style={styles.submitLabel}>
-            {selectedIds.length ? `Revisar oferta (${selectedIds.length})` : "Selecione um livro"}
+            {submitting ? "Enviando solicitação..." : selectedIds.length ? `Revisar oferta (${selectedIds.length})` : "Selecione um livro"}
           </Text>
         </Pressable>
       </View>
@@ -141,4 +211,16 @@ const styles = StyleSheet.create({
   submitLabel: { color: AppColors.white, fontSize: 16, fontWeight: "700" },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.8 },
+  modalBackdrop: { flex: 1, justifyContent: "center", padding: 24, backgroundColor: "rgba(0,0,0,0.45)" },
+  reviewCard: { width: "100%", maxWidth: 480, alignSelf: "center", padding: 22, gap: 12, borderRadius: 20, backgroundColor: AppColors.white },
+  reviewTitle: { color: AppColors.bookTitleText, fontSize: 20, fontWeight: "800" },
+  reviewLabel: { marginTop: 4, color: AppColors.categoryText, fontSize: 14, fontWeight: "700" },
+  reviewBook: { color: AppColors.darkBlue, fontSize: 15, lineHeight: 21 },
+  reviewNote: { color: AppColors.graySecondary, fontSize: 13, lineHeight: 19 },
+  feedback: { color: AppColors.danger, fontSize: 14, lineHeight: 20 },
+  reviewActions: { flexDirection: "row", gap: 10, marginTop: 6 },
+  reviewButton: { flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: 24 },
+  backButton: { backgroundColor: AppColors.border },
+  backButtonLabel: { color: AppColors.darkBlue, fontSize: 15, fontWeight: "700" },
+  confirmButton: { backgroundColor: AppColors.lightBlue },
 });

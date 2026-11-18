@@ -14,6 +14,7 @@ import { useState } from "react";
 import { Timestamp } from "firebase/firestore";
 import { Ionicons } from "@expo/vector-icons";
 import { deleteBook } from "../../../database/books";
+import { cancelTrade, rejectTrade } from "../../../database/trades";
 import { AddBookButton } from "@/components/home/AddBookButton";
 import { ScreenBackButton } from "@/components/navigation/ScreenBackButton";
 import { AppColors } from "@/constants/colors";
@@ -39,11 +40,17 @@ function RecordCard({
   kind,
   deleting,
   onDelete,
+  currentUid,
+  responding,
+  onTradeAction,
 }: {
   item: ProfileRecord;
   kind: RecordKind;
   deleting: boolean;
   onDelete: (id: string, title: string) => void;
+  currentUid?: string;
+  responding: boolean;
+  onTradeAction: (id: string, action: "cancel" | "reject") => void;
 }) {
   const data = item.data;
   if (kind === "books") {
@@ -95,18 +102,40 @@ function RecordCard({
     data.createdAt instanceof Timestamp
       ? data.createdAt.toDate().toLocaleDateString("pt-BR")
       : "";
+  const sender = data.sender && typeof data.sender === "object" ? data.sender as Record<string, unknown> : {};
+  const recipient = data.recipient && typeof data.recipient === "object" ? data.recipient as Record<string, unknown> : {};
+  const requestedBook = data.requestedBook && typeof data.requestedBook === "object" ? data.requestedBook as Record<string, unknown> : {};
+  const offeredBooks = Array.isArray(data.offeredBooks) ? data.offeredBooks as Record<string, unknown>[] : [];
+  const offeredTitles = offeredBooks.map((book) => text(book.title, "Livro")).join(", ");
+  const isSender = sender.uid === currentUid;
+  const isRecipient = recipient.uid === currentUid;
+  const pending = data.status === "pending";
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>
-        {text(data.offeredBookTitle, "Livro oferecido")}
-      </Text>
+      <Text style={styles.title}>Solicitação de troca</Text>
       <Text style={styles.body}>
-        Por: {text(data.requestedBookTitle, "Livro solicitado")}
+        {isRecipient ? `${text(sender.displayName, "Um usuário")} oferece ` : "Você ofereceu "}
+        {offeredTitles || text(data.offeredBookTitle, "um livro")} por {text(requestedBook.title, text(data.requestedBookTitle, "um livro solicitado"))}.
       </Text>
       <Text style={styles.body}>
         Situação: {statuses[text(data.status, "")] ?? "Não informada"}
       </Text>
       {!!date && <Text style={styles.body}>Registrada em {date}</Text>}
+      {pending && isSender && (
+        <TouchableOpacity disabled={responding} onPress={() => onTradeAction(item.id, "cancel")} style={[styles.tradeAction, styles.cancelAction, responding && styles.disabledButton]}>
+          {responding ? <ActivityIndicator color={AppColors.danger} size="small" /> : <Text style={styles.cancelText}>Cancelar solicitação</Text>}
+        </TouchableOpacity>
+      )}
+      {pending && isRecipient && (
+        <View style={styles.tradeActions}>
+          <TouchableOpacity disabled={responding} onPress={() => onTradeAction(item.id, "reject")} style={[styles.tradeAction, styles.cancelAction, responding && styles.disabledButton]}>
+            {responding ? <ActivityIndicator color={AppColors.danger} size="small" /> : <Text style={styles.cancelText}>Recusar</Text>}
+          </TouchableOpacity>
+          <TouchableOpacity disabled={responding} onPress={() => {}} style={[styles.tradeAction, styles.acceptAction]}>
+            <Text style={styles.acceptText}>Aceitar</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
@@ -127,6 +156,33 @@ export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
   const { records, loading, error, hasMore, retry, loadMore } =
     useProfileRecords(user?.uid, kind);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [respondingId, setRespondingId] = useState<string | null>(null);
+
+  const respondToTrade = async (id: string, action: "cancel" | "reject") => {
+    const actionLabel = action === "cancel" ? "cancelar" : "recusar";
+    const perform = async () => {
+      setRespondingId(id);
+      try {
+        if (action === "cancel") await cancelTrade(id);
+        else await rejectTrade(id);
+      } catch (cause) {
+        const message = cause instanceof Error ? cause.message : "Tente novamente mais tarde.";
+        if (Platform.OS === "web") globalThis.alert(message);
+        else Alert.alert("Não foi possível atualizar a solicitação", message);
+      } finally {
+        setRespondingId(null);
+      }
+    };
+    const message = `Deseja ${actionLabel} esta solicitação de troca?`;
+    if (Platform.OS === "web") {
+      if (globalThis.confirm(message)) void perform();
+      return;
+    }
+    Alert.alert("Confirmar ação", message, [
+      { text: "Voltar", style: "cancel" },
+      { text: action === "cancel" ? "Cancelar solicitação" : "Recusar", style: "destructive", onPress: () => void perform() },
+    ]);
+  };
 
   const confirmDelete = (id: string, title: string) => {
     const remove = async () => {
@@ -185,6 +241,9 @@ export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
             kind={kind}
             deleting={deletingId === item.id}
             onDelete={confirmDelete}
+            currentUid={user?.uid}
+            responding={respondingId === item.id}
+            onTradeAction={(id, action) => void respondToTrade(id, action)}
           />
         )}
         ListEmptyComponent={
@@ -294,5 +353,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#FCEBEC",
   },
   disabledButton: { opacity: 0.6 },
+  tradeActions: { flexDirection: "row", gap: 10 },
+  tradeAction: { flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: 12, paddingHorizontal: 12 },
+  cancelAction: { backgroundColor: "#FCEBEC" },
+  cancelText: { color: AppColors.danger, fontWeight: "700" },
+  acceptAction: { backgroundColor: AppColors.blue },
+  acceptText: { color: AppColors.white, fontWeight: "700" },
   link: { color: AppColors.blue, paddingVertical: 12 },
 });
