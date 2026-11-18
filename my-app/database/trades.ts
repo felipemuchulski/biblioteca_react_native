@@ -2,6 +2,7 @@ import {
   collection,
   doc,
   getFirestore,
+  runTransaction,
   serverTimestamp,
   updateDoc,
   writeBatch,
@@ -48,6 +49,7 @@ export async function createTrade(input: {
     offeredBooks: input.offeredBooks,
     requestedBook: input.requestedBook,
     status: "pending",
+    successConfirmedBy: [],
     createdAt: serverTimestamp(),
   });
   batch.set(doc(tradeRef, "contacts", user.uid), input.senderContact);
@@ -91,5 +93,58 @@ export async function declineNegotiation(tradeId: string) {
   if (!auth.currentUser) throw new Error("Entre na sua conta para declinar a troca.");
   await updateDoc(doc(getFirestore(auth.app), "trades", tradeId), {
     status: "rejected",
+  });
+}
+
+export async function confirmTradeSuccess(tradeId: string) {
+  const auth = getFirebaseAuth();
+  const user = auth.currentUser;
+  if (!user) throw new Error("Entre na sua conta para confirmar a troca.");
+
+  const firestore = getFirestore(auth.app);
+  const tradeRef = doc(firestore, "trades", tradeId);
+  await runTransaction(firestore, async (transaction) => {
+    const snapshot = await transaction.get(tradeRef);
+    if (!snapshot.exists()) throw new Error("A solicitação de troca não foi encontrada.");
+    const trade = snapshot.data();
+    if (trade.status !== "negotiating") {
+      throw new Error("Esta negociação não está mais aguardando confirmação.");
+    }
+    if (!Array.isArray(trade.participantIds) || !trade.participantIds.includes(user.uid)) {
+      throw new Error("Você não participa desta negociação.");
+    }
+
+    const participants = trade.participantIds as string[];
+    const confirmed = Array.isArray(trade.successConfirmedBy)
+      ? trade.successConfirmedBy.filter((id: unknown): id is string => typeof id === "string")
+      : [];
+    if (confirmed.includes(user.uid)) return;
+
+    const confirmations = [...confirmed, user.uid];
+    const complete = participants.every((participantId) => confirmations.includes(participantId));
+    transaction.update(tradeRef, {
+      successConfirmedBy: confirmations,
+      ...(complete ? { status: "completed" } : {}),
+    });
+
+    if (complete) {
+      const offeredIds = Array.isArray(trade.offeredBooks)
+        ? trade.offeredBooks
+            .map((book: { id?: unknown }) => book?.id)
+            .filter((id: unknown): id is string => typeof id === "string")
+        : [];
+      const requestedId = typeof trade.requestedBook?.id === "string"
+        ? trade.requestedBook.id
+        : "";
+      const bookIds = new Set([...offeredIds, requestedId].filter(Boolean));
+      if (!bookIds.size) throw new Error("Não foi possível identificar os livros da troca.");
+      for (const bookId of bookIds) {
+        transaction.update(doc(firestore, "books", bookId), {
+          available: false,
+          traded: true,
+          completedTradeId: tradeId,
+        });
+      }
+    }
   });
 }

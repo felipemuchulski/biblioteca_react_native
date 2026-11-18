@@ -116,11 +116,11 @@ service cloud.firestore {
     function validTrade(data) {
       return data.keys().hasOnly([
           'participantIds', 'sender', 'recipient', 'offeredBooks',
-          'requestedBook', 'status', 'createdAt'
+          'requestedBook', 'status', 'successConfirmedBy', 'createdAt'
         ])
         && data.keys().hasAll([
           'participantIds', 'sender', 'recipient', 'offeredBooks',
-          'requestedBook', 'status', 'createdAt'
+          'requestedBook', 'status', 'successConfirmedBy', 'createdAt'
         ])
         && data.participantIds is list && data.participantIds.size() == 2
         && data.sender is map && data.recipient is map
@@ -137,7 +137,58 @@ service cloud.firestore {
         && validTradeBooks(data.offeredBooks)
         && validTradeBook(data.requestedBook)
         && data.status == 'pending'
+        && data.successConfirmedBy is list && data.successConfirmedBy.size() == 0
         && data.createdAt == request.time;
+    }
+
+    function validSuccessConfirmation() {
+      let before = ('successConfirmedBy' in resource.data
+        && resource.data.successConfirmedBy is list)
+        ? resource.data.successConfirmedBy : [];
+      let after = request.resource.data.successConfirmedBy;
+      return request.auth.uid in resource.data.participantIds
+        && after is list
+        && ((before.size() == 0 && after.size() == 1
+            && after[0] == request.auth.uid
+            && request.resource.data.status == 'negotiating')
+          || (before.size() == 1 && before[0] in resource.data.participantIds
+            && before[0] != request.auth.uid
+            && after.size() == 2 && after[0] == before[0]
+            && after[1] == request.auth.uid
+            && request.resource.data.status == 'completed'));
+    }
+
+    function offeredBooksContain(books, bookId) {
+      return (books.size() > 0 && books[0].id == bookId)
+        || (books.size() > 1 && books[1].id == bookId)
+        || (books.size() > 2 && books[2].id == bookId)
+        || (books.size() > 3 && books[3].id == bookId)
+        || (books.size() > 4 && books[4].id == bookId)
+        || (books.size() > 5 && books[5].id == bookId)
+        || (books.size() > 6 && books[6].id == bookId)
+        || (books.size() > 7 && books[7].id == bookId)
+        || (books.size() > 8 && books[8].id == bookId)
+        || (books.size() > 9 && books[9].id == bookId)
+        || (books.size() > 10 && books[10].id == bookId)
+        || (books.size() > 11 && books[11].id == bookId)
+        || (books.size() > 12 && books[12].id == bookId)
+        || (books.size() > 13 && books[13].id == bookId)
+        || (books.size() > 14 && books[14].id == bookId)
+        || (books.size() > 15 && books[15].id == bookId)
+        || (books.size() > 16 && books[16].id == bookId)
+        || (books.size() > 17 && books[17].id == bookId)
+        || (books.size() > 18 && books[18].id == bookId)
+        || (books.size() > 19 && books[19].id == bookId);
+    }
+
+    function bookBelongsToCompletedTrade(tradeId, bookId, ownerId) {
+      let tradePath = /databases/$(database)/documents/trades/$(tradeId);
+      let trade = getAfter(tradePath).data;
+      return existsAfter(tradePath)
+        && trade.status == 'completed'
+        && request.auth.uid in trade.participantIds
+        && ((trade.requestedBook.id == bookId && trade.recipient.uid == ownerId)
+          || (trade.sender.uid == ownerId && offeredBooksContain(trade.offeredBooks, bookId)));
     }
 
     function validTradeContact(data) {
@@ -166,7 +217,17 @@ service cloud.firestore {
     match /books/{bookId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && validBook(request.resource.data);
-      allow update: if false;
+      allow update: if request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'available', 'traded', 'completedTradeId'
+        ])
+        && resource.data.available == true
+        && request.resource.data.available == false
+        && request.resource.data.traded == true
+        && request.resource.data.completedTradeId is string
+        && bookBelongsToCompletedTrade(
+          request.resource.data.completedTradeId, bookId, resource.data.ownerId
+        );
       allow delete: if request.auth != null
         && resource.data.ownerId == request.auth.uid;
     }
@@ -175,15 +236,20 @@ service cloud.firestore {
       allow read: if request.auth != null && request.auth.uid in resource.data.participantIds;
       allow create: if request.auth != null && validTrade(request.resource.data);
       allow update: if request.auth != null
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
-        && ((resource.data.status == 'pending'
+        && ((request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+          && ((resource.data.status == 'pending'
             && ((request.auth.uid == resource.data.sender.uid
                 && request.resource.data.status == 'cancelled')
               || (request.auth.uid == resource.data.recipient.uid
                 && request.resource.data.status in ['rejected', 'negotiating'])))
           || (resource.data.status == 'negotiating'
             && request.auth.uid in resource.data.participantIds
-            && request.resource.data.status == 'rejected'));
+            && request.resource.data.status == 'rejected')))
+          || (resource.data.status == 'negotiating'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status', 'successConfirmedBy'
+            ])
+            && validSuccessConfirmation()));
       allow delete: if false;
 
       match /contacts/{contactUid} {
@@ -193,7 +259,7 @@ service cloud.firestore {
         allow read: if request.auth != null
           && exists(tradePath())
           && request.auth.uid in get(tradePath()).data.participantIds
-          && get(tradePath()).data.status == 'negotiating';
+          && get(tradePath()).data.status in ['negotiating', 'completed'];
         allow create: if request.auth != null
           && request.auth.uid == contactUid
           && validTradeContact(request.resource.data)

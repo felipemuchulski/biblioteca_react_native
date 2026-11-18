@@ -14,7 +14,7 @@ import { useState } from "react";
 import { Timestamp } from "firebase/firestore";
 import { Ionicons } from "@expo/vector-icons";
 import { deleteBook } from "../../../database/books";
-import { acceptTrade, cancelTrade, declineNegotiation, rejectTrade } from "../../../database/trades";
+import { acceptTrade, cancelTrade, confirmTradeSuccess, declineNegotiation, rejectTrade } from "../../../database/trades";
 import { AddBookButton } from "@/components/home/AddBookButton";
 import { ScreenBackButton } from "@/components/navigation/ScreenBackButton";
 import { AppColors } from "@/constants/colors";
@@ -31,7 +31,7 @@ const text = (value: unknown, fallback: string) =>
 const statuses: Record<string, string> = {
   pending: "Pendente",
   accepted: "Aceita",
-  completed: "Concluída",
+  completed: "Troca bem-sucedida",
   cancelled: "Cancelada",
   rejected: "Recusada",
   negotiating: "Aguardando Negociação",
@@ -52,7 +52,7 @@ function RecordCard({
   onDelete: (id: string, title: string) => void;
   currentUid?: string;
   responding: boolean;
-  onTradeAction: (id: string, action: "cancel" | "reject" | "accept" | "decline") => void;
+  onTradeAction: (id: string, action: "cancel" | "reject" | "accept" | "decline" | "success") => void;
 }) {
   const data = item.data;
   if (kind === "books") {
@@ -113,6 +113,9 @@ function RecordCard({
   const isRecipient = recipient.uid === currentUid;
   const pending = data.status === "pending";
   const negotiating = data.status === "negotiating";
+  const completed = data.status === "completed";
+  const alreadyConfirmed = Array.isArray(data.successConfirmedBy)
+    && data.successConfirmedBy.includes(currentUid);
   const otherUserId = (isSender ? recipient.uid : sender.uid);
   const otherName = text(isSender ? recipient.displayName : sender.displayName, "outro participante");
   return (
@@ -135,6 +138,9 @@ function RecordCard({
       {negotiating && !item.hasPendingWrites && typeof otherUserId === "string" && (
         <TradeContactInfo tradeId={item.id} otherUserId={otherUserId} otherName={otherName} />
       )}
+      {completed && !item.hasPendingWrites && typeof otherUserId === "string" && (
+        <TradeContactInfo tradeId={item.id} otherUserId={otherUserId} otherName={otherName} />
+      )}
       {pending && isSender && (
         <TouchableOpacity disabled={responding} onPress={() => onTradeAction(item.id, "cancel")} style={[styles.tradeAction, styles.cancelAction, responding && styles.disabledButton]}>
           {responding ? <ActivityIndicator color={AppColors.danger} size="small" /> : <Text style={styles.cancelText}>Cancelar solicitação</Text>}
@@ -152,8 +158,12 @@ function RecordCard({
       )}
       {negotiating && (
         <View style={styles.tradeActions}>
-          <TouchableOpacity disabled={responding} onPress={() => {}} style={[styles.tradeAction, styles.acceptAction]}>
-            <Text style={styles.acceptText}>Troca bem-sucedida</Text>
+          <TouchableOpacity
+            disabled={responding || alreadyConfirmed}
+            onPress={() => onTradeAction(item.id, "success")}
+            style={[styles.tradeAction, styles.acceptAction, (responding || alreadyConfirmed) && styles.disabledButton]}
+          >
+            {responding ? <ActivityIndicator color={AppColors.white} size="small" /> : <Text style={styles.acceptText}>{alreadyConfirmed ? "Aguardando outra confirmação" : "Troca bem-sucedida"}</Text>}
           </TouchableOpacity>
           <TouchableOpacity disabled={responding} onPress={() => onTradeAction(item.id, "decline")} style={[styles.tradeAction, styles.cancelAction, responding && styles.disabledButton]}>
             {responding ? <ActivityIndicator color={AppColors.danger} size="small" /> : <Text style={styles.cancelText}>Troca declinada</Text>}
@@ -183,7 +193,7 @@ export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [respondingId, setRespondingId] = useState<string | null>(null);
 
-  const respondToTrade = async (id: string, action: "cancel" | "reject" | "accept" | "decline") => {
+  const respondToTrade = async (id: string, action: "cancel" | "reject" | "accept" | "decline" | "success") => {
     const actionLabel = action === "cancel" ? "cancelar" : action === "reject" ? "recusar" : "declinar";
     const perform = async () => {
       setRespondingId(id);
@@ -194,6 +204,7 @@ export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
           email: user?.email ?? profile?.email ?? "",
           whatsapp: profile?.whatsapp ?? "",
         });
+        else if (action === "success") await confirmTradeSuccess(id);
         else await declineNegotiation(id);
       } catch (cause) {
         const message = cause instanceof Error ? cause.message : "Tente novamente mais tarde.";
@@ -203,7 +214,7 @@ export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
         setRespondingId(null);
       }
     };
-    if (action === "accept" || action === "decline") {
+    if (action === "accept" || action === "decline" || action === "success") {
       void perform();
       return;
     }

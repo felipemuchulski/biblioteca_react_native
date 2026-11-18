@@ -22,7 +22,9 @@ export function useProfileRecords(uid: string | undefined, kind: RecordKind) {
       const filter = kind === 'books' ? where('ownerId', '==', uid) : where('participantIds', 'array-contains', uid);
       unsubscribe = onSnapshot(query(collection(db, kind), filter, limit(pageSize + 1)), { includeMetadataChanges: true }, (snapshot) => {
         if (active) setState({ key, loading: false, error: '', hasMore: snapshot.size > pageSize,
-          records: snapshot.docs.slice(0, pageSize).map((item) => ({
+          records: snapshot.docs.slice(0, pageSize)
+            .filter((item) => kind !== 'books' || item.data().traded !== true)
+            .map((item) => ({
             id: item.id,
             data: item.data(),
             hasPendingWrites: item.metadata.hasPendingWrites,
