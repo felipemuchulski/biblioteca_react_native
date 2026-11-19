@@ -64,7 +64,6 @@ export default function HomeScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Localização */}
         <View style={styles.locationRow}>
           <Ionicons name="location-sharp" size={14} color={AppColors.blue} />
           <Text style={styles.locationText}>
@@ -74,7 +73,6 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* Hero */}
         <View style={styles.hero}>
           <Text style={styles.heroTitle}>
             Que história vamos{"\n"}compartilhar hoje?
@@ -84,7 +82,6 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* Banner */}
         <View style={styles.banner}>
           <View style={styles.bannerBadge}>
             <Text style={styles.bannerBadgeText}>COMUNIDADE LIVROEI</Text>
@@ -102,7 +99,6 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Seção: Perto de você */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Livros cadastrados</Text>
         </View>
