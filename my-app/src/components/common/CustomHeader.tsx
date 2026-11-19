@@ -14,13 +14,7 @@ interface ICustomHeaderProps {
 }
 
 const CustomHeader = (props: ICustomHeaderProps) => {
-  const {
-    isToShowBackArrow = false,
-    backArrowRoute,
-    isToShowLike = false,
-    isLiked = false,
-    onLikePress,
-  } = props;
+  const { isToShowBackArrow = false, backArrowRoute } = props;
   const router = useRouter();
   const { loading, user } = useProfile();
 
@@ -57,29 +51,12 @@ const CustomHeader = (props: ICustomHeaderProps) => {
         <Text style={styles.logoText}>Livroei</Text>
       </View>
       <View style={styles.actions}>
-        {isToShowLike ? (
-          <TouchableOpacity
-            accessibilityLabel={isLiked ? "Remover dos favoritos" : "Favoritar"}
-            disabled={!onLikePress}
-            onPress={onLikePress}
-            style={styles.likeButton}
-          >
-            <Ionicons
-              name={isLiked ? "heart" : "heart-outline"}
-              size={20}
-              color={AppColors.darkBlue}
-            />
-          </TouchableOpacity>
-        ) : (
-          <>
-            <TouchableOpacity
-              onPress={() => router.push("/register-book")}
-              style={styles.addButton}
-            >
-              <Ionicons name="add" size={22} color={AppColors.white} />
-            </TouchableOpacity>
-          </>
-        )}
+        <TouchableOpacity
+          onPress={() => router.push("/register-book")}
+          style={styles.addButton}
+        >
+          <Ionicons name="add" size={22} color={AppColors.white} />
+        </TouchableOpacity>
       </View>
     </View>
   );

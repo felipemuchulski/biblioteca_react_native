@@ -5,7 +5,7 @@ import BookTypeSelector from "@/components/book-register/BookTypeSelector";
 import PhotoPicker from "@/components/book-register/PhotoPicker";
 import ConfirmBookRegisterButton from "@/components/book-register/ConfirmBookRegisterButton";
 import { AppColors } from "@/constants/colors";
-import type { BookCondition, BookType } from "@/types/book";
+import type { BookCondition, BookType, Coordinates } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { getFirebaseAuth } from "../../database/firebase";
 import { registerBook } from "../../database/books";
@@ -38,6 +38,7 @@ export type NewBookInput = {
   condition: BookCondition;
   conditionNote?: string;
   tradeWithBookId?: string;
+  ownerCoordinates?: Coordinates | null;
 };
 
 const parseCategories = (value: string) =>
@@ -49,7 +50,7 @@ const parseCategories = (value: string) =>
 export default function NewBookScreen() {
   const router = useRouter();
   const isAuthenticated = useIsAuthenticated();
-  const { loading: authLoading } = useProfile();
+  const { loading: authLoading, profile } = useProfile();
   const alertShown = useRef(false);
   const { tradeWithBookId } = useLocalSearchParams<{
     tradeWithBookId?: string | string[];
@@ -102,6 +103,7 @@ export default function NewBookScreen() {
     try {
       getFirebaseAuth();
     } catch (cause) {
+      console.error("NewBookScreen - Error on handleSubmit:", cause);
       Alert.alert(
         "Configuração necessária",
         cause instanceof Error
@@ -141,6 +143,7 @@ export default function NewBookScreen() {
       condition,
       conditionNote: conditionNote.trim() || undefined,
       tradeWithBookId: relatedBookId,
+      ownerCoordinates: profile?.coordinates ?? null,
     };
 
     setSubmitting(true);
@@ -173,17 +176,12 @@ export default function NewBookScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView
-          contentContainerStyle={[
-            styles.content,
-            { paddingBottom: 32 },
-          ]}
+          contentContainerStyle={[styles.content, { paddingBottom: 32 }]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.intro}>
-            <Text style={styles.pageTitle}>
-              Cadastrar livro
-            </Text>
+            <Text style={styles.pageTitle}>Cadastrar livro</Text>
             <Text style={styles.pageSubtitle}>
               Uma nova história começa na sua estante. Conte um pouco sobre o
               seu exemplar.
@@ -191,9 +189,7 @@ export default function NewBookScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              Sobre o livro
-            </Text>
+            <Text style={styles.sectionTitle}>Sobre o livro</Text>
             <BookFormField
               label="Título do livro"
               value={title}
@@ -241,9 +237,7 @@ export default function NewBookScreen() {
           />
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              Como está o seu exemplar?
-            </Text>
+            <Text style={styles.sectionTitle}>Como está o seu exemplar?</Text>
             <ConditionSelector
               value={condition}
               onChange={(c) => {

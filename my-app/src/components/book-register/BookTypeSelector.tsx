@@ -1,5 +1,5 @@
 import { AppColors } from "@/constants/colors";
-import type { BookType } from "@/types/book";
+import type { BookType } from "@/types";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 const OPTIONS: { value: BookType; label: string; hint: string }[] = [

@@ -1,5 +1,5 @@
 import { AppColors } from "@/constants/colors";
-import type { Book, BookCondition } from "@/types/book";
+import type { Book, BookCondition } from "@/types";
 import { isEmptyObject } from "@/utils/verify";
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";

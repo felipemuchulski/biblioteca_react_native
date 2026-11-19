@@ -10,13 +10,10 @@ import {
   View,
 } from "react-native";
 import { AppColors } from "@/constants/colors";
-import { emptyAddress } from "@/utils/address";
-import {
-  setAddressSelectionHandler,
-  type SelectedLocation,
-} from "@/utils/address-selection";
+import { useAddress } from "@/contexts/address-context";
 import AddressFields from "./AddressFields";
 import { saveUserProfile, type UserProfile } from "../../../database/users";
+import { emptyAddress } from "@/constants/address";
 
 interface IProfileEditorProps {
   profile: UserProfile;
@@ -27,9 +24,8 @@ interface IProfileEditorProps {
 const ProfileEditor = (props: IProfileEditorProps) => {
   const { profile, onClose, onSaved } = props;
   const router = useRouter();
-  const [coordinates, setCoordinates] = useState<SelectedLocation | null>(
-    profile.coordinates ?? null,
-  );
+  const { selectedLocation: coordinates, setSelectedLocation: setCoordinates } =
+    useAddress();
   const [name, setName] = useState(profile.displayName);
   const [whatsapp, setWhatsapp] = useState(profile.whatsapp);
   const [address, setAddress] = useState(
@@ -66,9 +62,8 @@ const ProfileEditor = (props: IProfileEditorProps) => {
   }
 
   useEffect(() => {
-    setAddressSelectionHandler(setCoordinates);
-    return () => setAddressSelectionHandler(undefined);
-  }, []);
+    setCoordinates(profile.coordinates ?? null);
+  }, [profile.coordinates, setCoordinates]);
 
   return (
     <View style={styles.form}>

@@ -42,6 +42,7 @@ const BookFormField = (props: IBookFormFieldProps) => {
         onChangeText={onChangeText}
         placeholder={placeholder}
         multiline={multiline}
+        textAlignVertical={multiline ? "top" : "auto"}
         maxLength={maxLength}
         autoCapitalize={autoCapitalize}
         style={[

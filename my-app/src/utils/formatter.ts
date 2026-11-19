@@ -12,5 +12,12 @@ export const formatCarouselPagination = (
 
 export function formatTitleToInternValue(title: string) {
   if (!title) return;
+
   return title.toLowerCase().replaceAll(" ", "-");
 }
+
+export const convertUnknownToString = (value: unknown, fallback: string) =>
+  typeof value === "string" && value.trim() ? value : fallback;
+
+export const verifyIfIsObject = (value: unknown): Record<string, unknown> =>
+  value && typeof value === "object" ? (value as Record<string, unknown>) : {};

@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Timestamp } from "firebase/firestore";
 import {
   ActivityIndicator,
   StyleSheet,
@@ -9,103 +8,84 @@ import {
 } from "react-native";
 
 import { AppColors } from "@/constants/colors";
-import type {
-  ProfileRecord,
-  RecordKind,
-} from "@/hooks/use-profile-records";
+import type { ProfileRecord, RecordKind } from "@/hooks/use-profile-records";
 import BookCover from "./BookCover";
+import TradeRecordCard from "./TradeRecordCard";
+import { Book, TradeAction } from "@/types";
 
 interface IRecordCardProps {
   item: ProfileRecord;
   kind: RecordKind;
   deleting: boolean;
   onDelete: (id: string, title: string) => void;
+  currentUid?: string;
+  responding?: boolean;
+  onTradeAction?: (id: string, action: TradeAction) => void;
 }
 
-const text = (value: unknown, fallback: string) =>
-  typeof value === "string" && value.trim() ? value : fallback;
-
-const statuses: Record<string, string> = {
-  pending: "Pendente",
-  accepted: "Aceita",
-  completed: "Concluída",
-  cancelled: "Cancelada",
-  rejected: "Recusada",
-};
-
 const RecordCard = (props: IRecordCardProps) => {
-  const { item, kind, deleting, onDelete } = props;
-  const data = item.data;
+  const {
+    item,
+    kind,
+    deleting,
+    onDelete,
+    currentUid,
+    responding,
+    onTradeAction,
+  } = props;
 
-  if (kind === "books") {
-    const images = Array.isArray(data.images)
-      ? data.images.filter(
-          (image: unknown): image is string =>
-            typeof image === "string" && !!image.trim(),
-        )
-      : [];
-    const imageUri = images[0] || text(data.thumbnail, "");
+  if (kind === "trades") {
     return (
-      <View style={styles.card}>
-        <View style={styles.bookImageContainer}>
-          {imageUri ? (
-            <BookCover uri={imageUri} />
-          ) : (
-            <Text style={styles.imageFallback}>
-              Falha ao carregar imagem
-            </Text>
-          )}
-        </View>
-        <Text style={styles.title}>{text(data.title, "Livro sem título")}</Text>
-        <Text style={styles.body}>
-          {text(data.author, "Autor não informado")}
-        </Text>
-        <Text style={styles.body}>
-          {data.type === "donation"
-            ? "Doação"
-            : data.type === "exchange"
-              ? "Troca"
-              : "Modalidade não informada"}
-        </Text>
-        <Text style={styles.body}>
-          {data.available === true
-            ? "Disponível"
-            : data.available === false
-              ? "Indisponível"
-              : "Disponibilidade não informada"}
-        </Text>
-        <TouchableOpacity
-          accessibilityLabel={`Excluir livro ${text(data.title, "")}`}
-          disabled={deleting}
-          onPress={() => onDelete(item.id, text(data.title, "este livro"))}
-          style={[styles.deleteButton, deleting && styles.disabledButton]}
-        >
-          {deleting ? (
-            <ActivityIndicator color={AppColors.danger} size="small" />
-          ) : (
-            <Ionicons name="trash-outline" size={19} color={AppColors.danger} />
-          )}
-        </TouchableOpacity>
-      </View>
+      <TradeRecordCard
+        item={item}
+        currentUid={currentUid}
+        responding={responding}
+        onTradeAction={onTradeAction}
+      />
     );
   }
 
-  const date =
-    data.createdAt instanceof Timestamp
-      ? data.createdAt.toDate().toLocaleDateString("pt-BR")
-      : "";
+  const data = item.data as Book;
+  const imageUri =
+    data.images?.find((image) => !!image.trim()) || data.thumbnail;
+
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>
-        {text(data.offeredBookTitle, "Livro oferecido")}
+      <View style={styles.bookImageContainer}>
+        {imageUri ? (
+          <BookCover uri={imageUri} />
+        ) : (
+          <Text style={styles.imageFallback}>Falha ao carregar imagem</Text>
+        )}
+      </View>
+      <Text style={styles.title}>{data.title || "Livro sem título"}</Text>
+      <Text style={styles.body}>{data.author || "Autor não informado"}</Text>
+      <Text style={styles.body}>
+        {data.type === "donation"
+          ? "Doação"
+          : data.type === "exchange"
+            ? "Troca"
+            : "Modalidade não informada"}
       </Text>
       <Text style={styles.body}>
-        Por: {text(data.requestedBookTitle, "Livro solicitado")}
+        {data.available === true
+          ? "Disponível"
+          : data.available === false
+            ? "Indisponível"
+            : "Disponibilidade não informada"}
       </Text>
-      <Text style={styles.body}>
-        Situação: {statuses[text(data.status, "")] ?? "Não informada"}
-      </Text>
-      {!!date && <Text style={styles.body}>Registrada em {date}</Text>}
+      <TouchableOpacity
+        accessibilityLabel={`Excluir livro ${data.title ?? ""}`}
+        disabled={deleting}
+        onPress={() => onDelete(item.id, data.title || "este livro")}
+        style={[styles.deleteButton, deleting && styles.disabledButton]}
+      >
+        {deleting ? (
+          <ActivityIndicator color={AppColors.danger} size="small" />
+        ) : (
+          <Ionicons name="trash-outline" size={19} color={AppColors.danger} />
+        )}
+      </TouchableOpacity>
     </View>
   );
 };

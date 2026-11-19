@@ -1,7 +1,7 @@
 import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { AppColors } from "@/constants/colors";
-import { Book } from "@/types/book";
+import { Book } from "@/types";
 
 interface IBookImagesCarouselProps {
   book: Book;
@@ -28,10 +28,7 @@ const BookImagesCarousel = (props: IBookImagesCarouselProps) => {
               selectedImage === image ? styles.selected : styles.unselected,
             ]}
           >
-            <Image
-              source={{ uri: image }}
-              style={[styles.cover]}
-            />
+            <Image source={{ uri: image }} style={[styles.cover]} />
           </View>
         </TouchableOpacity>
       ))}

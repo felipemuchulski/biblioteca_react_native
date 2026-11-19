@@ -56,7 +56,7 @@ service cloud.firestore {
       return data.keys().hasOnly([
           'ownerId', 'owner', 'title', 'author', 'images', 'thumbnail',
           'category', 'type', 'available', 'bookCondition',
-          'bookConditionNote', 'tradeWithBookId', 'createdAt'
+          'bookConditionNote', 'tradeWithBookId', 'ownerCoordinates', 'createdAt'
         ])
         && data.keys().hasAll([
           'ownerId', 'owner', 'title', 'author', 'images', 'thumbnail',
@@ -76,6 +76,16 @@ service cloud.firestore {
           || (data.bookConditionNote is string && data.bookConditionNote.size() <= 300))
         && (!('tradeWithBookId' in data)
           || (data.tradeWithBookId is string && data.tradeWithBookId.size() <= 120))
+        && (!('ownerCoordinates' in data) || data.ownerCoordinates == null
+          || (data.ownerCoordinates is map
+            && data.ownerCoordinates.keys().hasOnly(['latitude', 'longitude'])
+            && data.ownerCoordinates.keys().hasAll(['latitude', 'longitude'])
+            && data.ownerCoordinates.latitude is number
+            && data.ownerCoordinates.latitude >= -90
+            && data.ownerCoordinates.latitude <= 90
+            && data.ownerCoordinates.longitude is number
+            && data.ownerCoordinates.longitude >= -180
+            && data.ownerCoordinates.longitude <= 180))
         && data.createdAt == request.time;
     }
 

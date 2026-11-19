@@ -1,5 +1,5 @@
 import { AppColors } from "@/constants/colors";
-import type { BookCondition } from "@/types/book";
+import type { BookCondition } from "@/types";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 const OPTIONS: { value: BookCondition; label: string; hint: string }[] = [

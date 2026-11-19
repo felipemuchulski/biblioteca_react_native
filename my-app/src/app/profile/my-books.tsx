@@ -1,4 +1,4 @@
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -11,14 +11,18 @@ import {
 } from "react-native";
 
 import { deleteBook } from "../../../database/books";
+import BookGridCard from "@/components/common/BookGridCard";
 import AddBookButton from "@/components/home/AddBookButton";
 import ScreenBackButton from "@/components/navigation/ScreenBackButton";
-import RecordCard from "@/components/profile/RecordCard";
 import { AppColors } from "@/constants/colors";
+import { useBooks } from "@/contexts/books-context";
 import { useProfile } from "@/hooks/use-profile";
 import { useProfileRecords } from "@/hooks/use-profile-records";
+import type { Book } from "@/types";
 
 export default function MyBooksScreen() {
+  const router = useRouter();
+  const { setSelectedBook } = useBooks();
   const {
     user,
     loading: authLoading,
@@ -29,6 +33,63 @@ export default function MyBooksScreen() {
     useProfileRecords(user?.uid, "books");
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const books: Book[] = records.map((record) => {
+    const data = record.data;
+    const images = Array.isArray(data.images)
+      ? data.images.filter(
+          (image: unknown): image is string =>
+            typeof image === "string" && !!image.trim(),
+        )
+      : [];
+    const thumbnail =
+      typeof data.thumbnail === "string" && data.thumbnail
+        ? data.thumbnail
+        : images[0] || "";
+    const type =
+      data.type === "donation" || data.type === "exchange"
+        ? data.type
+        : "donation";
+    const condition =
+      data.bookCondition === "new" ||
+      data.bookCondition === "like_new" ||
+      data.bookCondition === "good" ||
+      data.bookCondition === "worn"
+        ? data.bookCondition
+        : "good";
+
+    return {
+      id: record.id,
+      ownerId: typeof data.ownerId === "string" ? data.ownerId : user?.uid,
+      title: typeof data.title === "string" ? data.title : "Livro sem título",
+      author:
+        typeof data.author === "string" ? data.author : "Autor não informado",
+      images,
+      thumbnail,
+      type,
+      distance: "Distância indisponível",
+      owner: typeof data.owner === "string" ? data.owner : "Usuário",
+      isFavorite: false,
+      category: Array.isArray(data.category)
+        ? data.category.filter(
+            (category: unknown): category is string =>
+              typeof category === "string",
+          )
+        : [],
+      available: typeof data.available === "boolean" ? data.available : true,
+      bookCondition: condition,
+      ...(typeof data.bookConditionNote === "string"
+        ? { bookConditionNote: data.bookConditionNote }
+        : {}),
+    };
+  });
+
+  const handlePress = (book: Book) => {
+    setSelectedBook(book);
+    router.push({
+      pathname: "/book/[id]",
+      params: { id: book.id },
+    });
+  };
 
   const confirmDelete = (id: string, title: string) => {
     const remove = async () => {
@@ -100,17 +161,17 @@ export default function MyBooksScreen() {
         ) : (
           <FlatList
             style={styles.list}
-            data={records}
+            data={books}
+            numColumns={2}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <View style={styles.recordItem}>
-                <RecordCard
-                  item={item}
-                  kind="books"
-                  deleting={deletingId === item.id}
-                  onDelete={confirmDelete}
-                />
-              </View>
+              <BookGridCard
+                book={item}
+                showDistance={false}
+                onPress={handlePress}
+                onDelete={(book) => confirmDelete(book.id, book.title)}
+                deleting={deletingId === item.id}
+              />
             )}
           />
         )}

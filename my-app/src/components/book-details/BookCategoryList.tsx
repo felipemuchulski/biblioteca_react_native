@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "@/constants/colors";
-import { Book } from "@/types/book";
+import { Book } from "@/types";
 import { formatTitleToInternValue } from "@/utils/formatter";
 
 interface IBookCategoryListProps {

@@ -1,16 +1,19 @@
 import { AppColors } from "@/constants/colors";
-import type { Book } from "@/types/book";
+import type { Book } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
 interface IBookOwnerCardProps extends Pick<
   Book,
   "owner" | "distance" | "distanceMeters" | "ownerNeighborhood" | "ownerCity"
-> {}
+> {
+  isOwner?: boolean;
+}
 
 const BookOwnerCard = (props: IBookOwnerCardProps) => {
   const {
     owner,
+    isOwner = false,
     distance,
     distanceMeters,
     ownerNeighborhood,
@@ -32,7 +35,10 @@ const BookOwnerCard = (props: IBookOwnerCardProps) => {
             <Text style={styles.avatarText}>{formattedOwnerName}</Text>
           </View>
           <View style={styles.nameContainer}>
-            <Text style={styles.name}>{owner}</Text>
+            <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
+              {owner}
+              {isOwner ? <Text style={styles.you}> (você)</Text> : null}
+            </Text>
           </View>
         </View>
 
@@ -81,6 +87,7 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontSize: 20, fontWeight: "700", color: AppColors.darkBlue },
   name: { fontSize: 17, fontWeight: "700", color: AppColors.darkBlue },
+  you: { fontSize: 13, color: AppColors.graySecondary, fontWeight: "400" },
   nameContainer: { flex: 1 },
   locationRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
   distance: { flex: 1, fontSize: 15, fontWeight: "700", color: AppColors.blue },

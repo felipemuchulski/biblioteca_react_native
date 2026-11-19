@@ -1,6 +1,8 @@
-export type Coordinates = { latitude: number; longitude: number };
+import { Coordinates } from "@/types";
 
-export const isValidCoordinates = (value: Coordinates) => {
+export const isValidCoordinates = (
+  value: Coordinates | null | undefined,
+): boolean => {
   if (!value || typeof value !== "object") return false;
 
   const { latitude, longitude } = value;
@@ -22,6 +24,9 @@ export const calculateDistance = (
 ) => {
   if (!isValidCoordinates(origin) || !isValidCoordinates(destination))
     return null;
+
+  if (!origin || !destination) return null;
+
   const radians = (degrees: number) => (degrees * Math.PI) / 180;
   const latitudeDelta = radians(destination.latitude - origin.latitude);
   const longitudeDelta = radians(destination.longitude - origin.longitude);
@@ -35,7 +40,7 @@ export const calculateDistance = (
 
 export function formatDistance(meters: number | null | undefined): string {
   if (meters == null || !Number.isFinite(meters) || meters < 0)
-    return "Distância indisponível";
+    return "Distância indisp.";
   if (meters < 1) return "Menos de 1 m";
   if (meters < 1000) return `${Math.round(meters)} m`;
   return `${(meters / 1000).toFixed(1).replace(".", ",")} km`;

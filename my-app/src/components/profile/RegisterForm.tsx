@@ -15,17 +15,15 @@ import {
 } from "react-native";
 import { AppColors } from "@/constants/colors";
 import AddressFields from "@/components/profile/AddressFields";
-import { Address, emptyAddress, validateAddress } from "@/utils/address";
-import {
-  setAddressSelectionHandler,
-  type SelectedLocation,
-} from "@/utils/address-selection";
+import { useAddress } from "@/contexts/address-context";
 import {
   formatWhatsappInput,
   normalizeWhatsappNumber,
   registerUser,
   UserProfileSaveError,
 } from "../../../database/users";
+import { Address, emptyAddress } from "@/constants/address";
+import { validateAddress } from "@/utils/address";
 
 const REGISTER_BOOK_ROUTE = "/register-book";
 const LOGIN_ROUTE = "/login";
@@ -43,7 +41,8 @@ const RegisterForm = (props: IRegisterFormProps) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
-  const [coordinates, setCoordinates] = useState<SelectedLocation | null>(null);
+  const { selectedLocation: coordinates, setSelectedLocation: setCoordinates } =
+    useAddress();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -51,6 +50,10 @@ const RegisterForm = (props: IRegisterFormProps) => {
   const [address, setAddress] = useState<Address>({ ...emptyAddress });
 
   const router = useRouter();
+
+  useEffect(() => {
+    setCoordinates(null);
+  }, [setCoordinates]);
 
   let mapLocationText = "Selecionar localização no mapa";
   if (coordinates) {
@@ -162,11 +165,6 @@ const RegisterForm = (props: IRegisterFormProps) => {
     }
   };
 
-  useEffect(() => {
-    setAddressSelectionHandler(setCoordinates);
-    return () => setAddressSelectionHandler(undefined);
-  }, []);
-
   return (
     <View style={styles.safe}>
       <KeyboardAvoidingView
@@ -239,9 +237,7 @@ const RegisterForm = (props: IRegisterFormProps) => {
               style={styles.mapButton}
             >
               <Ionicons name="map-outline" size={20} color={AppColors.blue} />
-              <Text style={styles.mapButtonText}>
-                {mapLocationText}
-              </Text>
+              <Text style={styles.mapButtonText}>{mapLocationText}</Text>
               <Ionicons
                 name="chevron-forward"
                 size={18}
@@ -279,11 +275,7 @@ const RegisterForm = (props: IRegisterFormProps) => {
               value={confirmPassword}
             />
 
-            {error ? (
-              <Text style={styles.error}>
-                {error}
-              </Text>
-            ) : null}
+            {error ? <Text style={styles.error}>{error}</Text> : null}
 
             <TouchableOpacity
               disabled={submitting}

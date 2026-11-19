@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { AppColors } from "@/constants/colors";
-import { addressFields, type Address } from "@/utils/address";
 import { fetchAddressByPostalCode } from "../../../database/users";
+import { Address, addressFields } from "@/constants/address";
 
 interface IAddressFieldsProps {
   value: Address;
@@ -55,7 +55,7 @@ const AddressFields = (props: IAddressFieldsProps) => {
       <Text style={styles.help}>
         Opcional. Seu endereço completo fica visível apenas para você.
       </Text>
-      {addressFields.map(([key, label]) => (
+      {addressFields.map(({ key, label }) => (
         <View key={key} style={styles.field}>
           <Text style={styles.label}>{label}</Text>
           <TextInput
@@ -93,9 +93,7 @@ const AddressFields = (props: IAddressFieldsProps) => {
             style={styles.input}
           />
           {key === "postalCode" && postalCodeError ? (
-            <Text style={styles.error}>
-              {postalCodeError}
-            </Text>
+            <Text style={styles.error}>{postalCodeError}</Text>
           ) : null}
         </View>
       ))}

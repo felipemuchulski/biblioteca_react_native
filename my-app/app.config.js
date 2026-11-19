@@ -17,6 +17,7 @@ module.exports = ({ config }) => ({
   ...config,
   plugins: [
     ...(config.plugins ?? []),
+    "expo-web-browser",
     [
       "react-native-maps",
       {

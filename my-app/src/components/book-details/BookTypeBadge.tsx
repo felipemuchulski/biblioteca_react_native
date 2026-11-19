@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "@/constants/colors";
-import { BookType } from "@/types/book";
+import { BookType } from "@/types";
 import { formatCarouselPagination } from "@/utils/formatter";
 
 interface IBookTypeBadgeProps {

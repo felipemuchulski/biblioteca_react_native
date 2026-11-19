@@ -33,8 +33,17 @@ const PhotoPicker = (props: IPhotoPickerProps) => {
       allowsMultipleSelection: true,
       selectionLimit: remaining,
       quality: 0.8,
+      base64: true,
     });
-    if (!result.canceled) addUris(result.assets.map((a) => a.uri));
+    if (!result.canceled) {
+      addUris(
+        result.assets.map((asset) =>
+          asset.base64
+            ? `data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`
+            : asset.uri,
+        ),
+      );
+    }
   };
 
   const takePhoto = async () => {
@@ -46,8 +55,19 @@ const PhotoPicker = (props: IPhotoPickerProps) => {
       );
       return;
     }
-    const result = await ImagePicker.launchCameraAsync({ quality: 0.8 });
-    if (!result.canceled) addUris(result.assets.map((a) => a.uri));
+    const result = await ImagePicker.launchCameraAsync({
+      quality: 0.8,
+      base64: true,
+    });
+    if (!result.canceled) {
+      addUris(
+        result.assets.map((asset) =>
+          asset.base64
+            ? `data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`
+            : asset.uri,
+        ),
+      );
+    }
   };
 
   const handleAdd = () => {

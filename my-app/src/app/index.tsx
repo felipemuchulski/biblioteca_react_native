@@ -9,12 +9,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import BookCard from "@/components/book-details/BookCard";
+import BookCard from "@/components/common/BookCard";
 import CustomHeader from "@/components/common/CustomHeader";
 import { AppColors } from "@/constants/colors";
 import { useBooks } from "@/contexts/books-context";
 import { useProfile } from "@/hooks/use-profile";
-import { Book } from "@/types/book";
+import { Book } from "@/types";
 
 export default function HomeScreen() {
   const router = useRouter();

@@ -13,16 +13,22 @@ import RecordCard from "@/components/profile/RecordCard";
 import { AppColors } from "@/constants/colors";
 import { useProfile } from "@/hooks/use-profile";
 import { useProfileRecords } from "@/hooks/use-profile-records";
+import { useTradeActions } from "@/hooks/use-trade-actions";
 
 export default function MyTradesScreen() {
   const {
     user,
+    profile,
     loading: authLoading,
     error: authError,
     retry: retryAuth,
   } = useProfile();
   const { records, loading, error, hasMore, retry, loadMore } =
     useProfileRecords(user?.uid, "trades");
+  const { respondingId, respondToTrade } = useTradeActions({
+    email: user?.email ?? profile?.email ?? "",
+    whatsapp: profile?.whatsapp ?? "",
+  });
 
   return (
     <View style={styles.screen}>
@@ -66,6 +72,7 @@ export default function MyTradesScreen() {
           <FlatList
             style={styles.list}
             data={records}
+            extraData={respondingId}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <View style={styles.recordItem}>
@@ -74,6 +81,9 @@ export default function MyTradesScreen() {
                   kind="trades"
                   deleting={false}
                   onDelete={() => {}}
+                  currentUid={user.uid}
+                  responding={respondingId === item.id}
+                  onTradeAction={respondToTrade}
                 />
               </View>
             )}
