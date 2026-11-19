@@ -13,7 +13,7 @@ import { AppColors } from "@/constants/colors";
 import { Book } from "@/types";
 import BookTypeBadge from "../book-details/BookTypeBadge";
 
-const CARD_WIDTH = (Dimensions.get("window").width - 48) / 2;
+const CARD_WIDTH = (Dimensions.get("window").width - 60) / 2;
 
 interface IBookGridCardProps {
   book: Book;

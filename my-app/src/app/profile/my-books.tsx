@@ -163,6 +163,7 @@ export default function MyBooksScreen() {
             style={styles.list}
             data={books}
             numColumns={2}
+            columnWrapperStyle={styles.columnWrapper}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <BookGridCard
@@ -220,6 +221,7 @@ const styles = StyleSheet.create({
   },
   body: { color: AppColors.categoryText, lineHeight: 22 },
   list: { flex: 1, width: "100%" },
+  columnWrapper: { justifyContent: "space-between" },
   recordItem: { marginBottom: 16 },
   button: {
     backgroundColor: AppColors.blue,
