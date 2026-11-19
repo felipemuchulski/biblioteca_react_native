@@ -2,40 +2,27 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { AppColors } from "@/constants/colors";
-import { Book } from "@/types/book";
-import { BookTypeBadge } from "./BookTypeBadge";
+import { Book } from "@/types";
+import BookTypeBadge from "../book-details/BookTypeBadge";
 
-interface BookCardProps {
+interface IBookCardProps {
   book: Book;
   onToggleFavorite: (id: string) => void;
   onPress: (book: Book) => void;
 }
 
-export function BookCard({ book, onToggleFavorite, onPress }: BookCardProps) {
+const BookCard = (props: IBookCardProps) => {
+  const { book, onPress } = props;
   return (
     <TouchableOpacity
       style={styles.card}
       onPress={() => onPress(book)}
       activeOpacity={0.85}
     >
-      <Image
-        source={{ uri: book.thumbnail }}
-        style={styles.cover}
-        defaultSource={require("@/assets/images/icon.png")}
-      />
+      <Image source={{ uri: book.thumbnail }} style={styles.cover} />
       <View style={styles.info}>
         <View style={styles.topRow}>
           <BookTypeBadge type={book.type} />
-          <TouchableOpacity
-            onPress={() => onToggleFavorite(book.id)}
-            hitSlop={8}
-          >
-            <Ionicons
-              name={book.isFavorite ? "heart" : "heart-outline"}
-              size={20}
-              color={book.isFavorite ? "#E05C5C" : AppColors.graySecondary}
-            />
-          </TouchableOpacity>
         </View>
 
         <Text style={styles.title} numberOfLines={2}>
@@ -60,13 +47,21 @@ export function BookCard({ book, onToggleFavorite, onPress }: BookCardProps) {
               size={13}
               color={AppColors.graySecondary}
             />
-            <Text style={styles.meta}>{book.owner}</Text>
+            <Text
+              style={styles.ownerName}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {book.owner}
+            </Text>
           </View>
         </View>
       </View>
     </TouchableOpacity>
   );
-}
+};
+
+export default BookCard;
 
 const styles = StyleSheet.create({
   card: {
@@ -76,10 +71,6 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 12,
     gap: 12,
-    shadowColor: AppColors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
     elevation: 3,
   },
   cover: {
@@ -102,6 +93,12 @@ const styles = StyleSheet.create({
   },
   author: { fontSize: 13, color: AppColors.graySecondary, marginTop: 2 },
   bottomRow: { flexDirection: "row", gap: 12, marginTop: 8 },
-  metaItem: { flexDirection: "row", alignItems: "center", gap: 3 },
+  metaItem: { flexDirection: "row", alignItems: "center", gap: 3, flexShrink: 1 },
   meta: { fontSize: 12, color: AppColors.graySecondary },
+  ownerName: {
+    flexShrink: 1,
+    maxWidth: 120,
+    fontSize: 12,
+    color: AppColors.graySecondary,
+  },
 });

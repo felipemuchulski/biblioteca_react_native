@@ -1,5 +1,5 @@
 import { AppColors } from "@/constants/colors";
-import type { BookType } from "@/types/book";
+import type { BookType } from "@/types";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 const OPTIONS: { value: BookType; label: string; hint: string }[] = [
@@ -15,13 +15,14 @@ const OPTIONS: { value: BookType; label: string; hint: string }[] = [
   },
 ];
 
-type Props = {
+interface IBookTypeSelectorProps {
   value: BookType | null;
   onChange: (value: BookType) => void;
   error?: string;
-};
+}
 
-export function BookTypeSelector({ value, onChange, error }: Props) {
+const BookTypeSelector = (props: IBookTypeSelectorProps) => {
+  const { value, onChange, error } = props;
   const selected = OPTIONS.find((option) => option.value === value);
 
   return (
@@ -55,7 +56,9 @@ export function BookTypeSelector({ value, onChange, error }: Props) {
       ) : null}
     </View>
   );
-}
+};
+
+export default BookTypeSelector;
 
 const styles = StyleSheet.create({
   wrapper: { gap: 8 },

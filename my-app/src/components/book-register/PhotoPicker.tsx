@@ -4,23 +4,23 @@ import * as ImagePicker from "expo-image-picker";
 import {
   Alert,
   Image,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
-  useWindowDimensions,
+  Dimensions,
   View,
 } from "react-native";
 
-type Props = {
+interface IPhotoPickerProps {
   photos: string[];
   onChange: (photos: string[]) => void;
   max?: number;
   error?: string;
-};
+}
 
-export function PhotoPicker({ photos, onChange, max = 8, error }: Props) {
-  const { width } = useWindowDimensions();
+const PhotoPicker = (props: IPhotoPickerProps) => {
+  const { photos, onChange, max = 8, error } = props;
+  const { width } = Dimensions.get("window");
   const size = (width - 20 * 2 - 12 * (3 - 1)) / 3;
   const remaining = max - photos.length;
 
@@ -33,8 +33,17 @@ export function PhotoPicker({ photos, onChange, max = 8, error }: Props) {
       allowsMultipleSelection: true,
       selectionLimit: remaining,
       quality: 0.8,
+      base64: true,
     });
-    if (!result.canceled) addUris(result.assets.map((a) => a.uri));
+    if (!result.canceled) {
+      addUris(
+        result.assets.map((asset) =>
+          asset.base64
+            ? `data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`
+            : asset.uri,
+        ),
+      );
+    }
   };
 
   const takePhoto = async () => {
@@ -46,16 +55,22 @@ export function PhotoPicker({ photos, onChange, max = 8, error }: Props) {
       );
       return;
     }
-    const result = await ImagePicker.launchCameraAsync({ quality: 0.8 });
-    if (!result.canceled) addUris(result.assets.map((a) => a.uri));
+    const result = await ImagePicker.launchCameraAsync({
+      quality: 0.8,
+      base64: true,
+    });
+    if (!result.canceled) {
+      addUris(
+        result.assets.map((asset) =>
+          asset.base64
+            ? `data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`
+            : asset.uri,
+        ),
+      );
+    }
   };
 
   const handleAdd = () => {
-    if (Platform.OS === "web") {
-      void pickFromLibrary();
-      return;
-    }
-
     Alert.alert("Adicionar fotos", undefined, [
       { text: "Tirar foto", onPress: takePhoto },
       { text: "Escolher da galeria", onPress: pickFromLibrary },
@@ -74,7 +89,7 @@ export function PhotoPicker({ photos, onChange, max = 8, error }: Props) {
   return (
     <View style={styles.wrapper}>
       <View style={styles.titleRow}>
-        <Text accessibilityRole="header" style={styles.title}>
+        <Text style={styles.title}>
           Fotos do exemplar
         </Text>
         <Text style={styles.count}>{count}</Text>
@@ -86,13 +101,11 @@ export function PhotoPicker({ photos, onChange, max = 8, error }: Props) {
 
       <View style={styles.grid}>
         {photos.map((uri, index) => (
-          <View key={uri} style={{ width: size, aspectRatio: 0.87 }}>
+          <View key={uri} style={[styles.photoTile, { width: size }]}>
             <Image source={{ uri }} style={styles.photo} />
 
             <Pressable
-              accessibilityRole="button"
               accessibilityLabel={`Remover foto ${index + 1}`}
-              hitSlop={8}
               onPress={() => handleRemove(uri)}
               style={styles.remove}
             >
@@ -109,10 +122,9 @@ export function PhotoPicker({ photos, onChange, max = 8, error }: Props) {
 
         {remaining > 0 && (
           <Pressable
-            accessibilityRole="button"
             accessibilityLabel="Adicionar fotos"
             onPress={handleAdd}
-            style={[styles.addTile, { width: size, aspectRatio: 0.87 }]}
+            style={[styles.addTile, { width: size }]}
           >
             <Ionicons name="camera-outline" size={26} color={AppColors.blue} />
             <Text style={styles.addText}>
@@ -131,7 +143,9 @@ export function PhotoPicker({ photos, onChange, max = 8, error }: Props) {
       )}
     </View>
   );
-}
+};
+
+export default PhotoPicker;
 
 const styles = StyleSheet.create({
   wrapper: { gap: 8 },
@@ -144,6 +158,7 @@ const styles = StyleSheet.create({
   count: { fontSize: 12, color: AppColors.graySecondary },
   description: { fontSize: 14, lineHeight: 20, color: AppColors.categoryText },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 4 },
+  photoTile: { aspectRatio: 0.87 },
   photo: {
     width: "100%",
     height: "100%",

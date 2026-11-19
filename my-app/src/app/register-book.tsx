@@ -1,17 +1,17 @@
-import { BookHeader } from "@/components/book-details/BookHeader";
-import { ConditionSelector } from "@/components/book-register/ConditionSelector";
-import { BookFormField } from "@/components/book-register/BookFormField";
-import { BookTypeSelector } from "@/components/book-register/BookTypeSelector";
-import { PhotoPicker } from "@/components/book-register/PhotoPicker";
-import { ConfirmBookRegisterButton } from "@/components/book-register/ConfirmBookRegisterButton";
+import CustomHeader from "@/components/common/CustomHeader";
+import ConditionSelector from "@/components/book-register/ConditionSelector";
+import BookFormField from "@/components/book-register/BookFormField";
+import BookTypeSelector from "@/components/book-register/BookTypeSelector";
+import PhotoPicker from "@/components/book-register/PhotoPicker";
+import ConfirmBookRegisterButton from "@/components/book-register/ConfirmBookRegisterButton";
 import { AppColors } from "@/constants/colors";
-import type { BookCondition, BookType } from "@/types/book";
+import type { BookCondition, BookType, Coordinates } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
-import { getFirebaseAuth } from "../../../database/firebase";
-import { registerBook } from "../../../database/books";
+import { getFirebaseAuth } from "../../database/firebase";
+import { registerBook } from "../../database/books";
 import { uploadBookImages } from "@/services/cloudinary";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -21,10 +21,8 @@ import {
   Text,
   View,
 } from "react-native";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { useIsAuthenticated } from "@/hooks/use-is-authenticated";
+import { useProfile } from "@/hooks/use-profile";
 
 type FormErrors = Partial<
   Record<"title" | "author" | "photos" | "condition" | "type", string>
@@ -40,6 +38,7 @@ export type NewBookInput = {
   condition: BookCondition;
   conditionNote?: string;
   tradeWithBookId?: string;
+  ownerCoordinates?: Coordinates | null;
 };
 
 const parseCategories = (value: string) =>
@@ -50,12 +49,29 @@ const parseCategories = (value: string) =>
 
 export default function NewBookScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const isAuthenticated = useIsAuthenticated();
+  const { loading: authLoading, profile } = useProfile();
+  const alertShown = useRef(false);
   const { tradeWithBookId } = useLocalSearchParams<{
     tradeWithBookId?: string | string[];
   }>();
   const relatedBookId =
     typeof tradeWithBookId === "string" ? tradeWithBookId : undefined;
+
+  useEffect(() => {
+    if (authLoading || isAuthenticated || alertShown.current) return;
+    alertShown.current = true;
+    Alert.alert("Entre na sua conta", "Faça login para cadastrar um livro.", [
+      {
+        text: "Ir para o login",
+        onPress: () =>
+          router.replace({
+            pathname: "/login",
+            params: { returnTo: "/register-book" },
+          }),
+      },
+    ]);
+  }, [authLoading, isAuthenticated, router]);
 
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
@@ -84,10 +100,10 @@ export default function NewBookScreen() {
   const handleSubmit = async () => {
     if (submitting) return;
 
-    let auth;
     try {
-      auth = getFirebaseAuth();
+      getFirebaseAuth();
     } catch (cause) {
+      console.error("NewBookScreen - Error on handleSubmit:", cause);
       Alert.alert(
         "Configuração necessária",
         cause instanceof Error
@@ -97,14 +113,18 @@ export default function NewBookScreen() {
       return;
     }
 
-    if (!auth.currentUser) {
+    if (!isAuthenticated) {
       Alert.alert(
         "Entre na sua conta",
         "Você precisa estar logado para cadastrar um livro.",
         [
           {
             text: "Criar perfil",
-            onPress: () => router.push("/register-user"),
+            onPress: () =>
+              router.push({
+                pathname: "/login",
+                params: { returnTo: "/register-book" },
+              }),
           },
         ],
       );
@@ -123,6 +143,7 @@ export default function NewBookScreen() {
       condition,
       conditionNote: conditionNote.trim() || undefined,
       tradeWithBookId: relatedBookId,
+      ownerCoordinates: profile?.coordinates ?? null,
     };
 
     setSubmitting(true);
@@ -148,24 +169,19 @@ export default function NewBookScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      <BookHeader />
+    <View style={styles.safe}>
+      <CustomHeader isToShowBackArrow backArrowRoute="/" isToShowLike />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView
-          contentContainerStyle={[
-            styles.content,
-            { paddingBottom: insets.bottom + 32 },
-          ]}
+          contentContainerStyle={[styles.content, { paddingBottom: 32 }]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.intro}>
-            <Text accessibilityRole="header" style={styles.pageTitle}>
-              Cadastrar livro
-            </Text>
+            <Text style={styles.pageTitle}>Cadastrar livro</Text>
             <Text style={styles.pageSubtitle}>
               Uma nova história começa na sua estante. Conte um pouco sobre o
               seu exemplar.
@@ -173,9 +189,7 @@ export default function NewBookScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text accessibilityRole="header" style={styles.sectionTitle}>
-              Sobre o livro
-            </Text>
+            <Text style={styles.sectionTitle}>Sobre o livro</Text>
             <BookFormField
               label="Título do livro"
               value={title}
@@ -184,7 +198,6 @@ export default function NewBookScreen() {
                 clearError("title");
               }}
               error={errors.title}
-              returnKeyType="next"
               autoCapitalize="sentences"
             />
             <BookFormField
@@ -195,7 +208,6 @@ export default function NewBookScreen() {
                 clearError("author");
               }}
               error={errors.author}
-              returnKeyType="next"
               autoCapitalize="words"
             />
             <BookFormField
@@ -225,9 +237,7 @@ export default function NewBookScreen() {
           />
 
           <View style={styles.section}>
-            <Text accessibilityRole="header" style={styles.sectionTitle}>
-              Como está o seu exemplar?
-            </Text>
+            <Text style={styles.sectionTitle}>Como está o seu exemplar?</Text>
             <ConditionSelector
               value={condition}
               onChange={(c) => {
@@ -267,13 +277,13 @@ export default function NewBookScreen() {
           />
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  safe: { flex: 1, backgroundColor: AppColors.background },
+  safe: { flex: 1, paddingTop: 24, backgroundColor: AppColors.background },
   content: { paddingHorizontal: 20, paddingTop: 8, gap: 28 },
   intro: { gap: 6 },
   pageTitle: {

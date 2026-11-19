@@ -15,11 +15,13 @@ calculateDistance(
 ); // aproximadamente 361.150 metros
 ```
 
-O contexto de livros calcula a distância entre o perfil autenticado e `book.ownerCoordinates` e a fornece à página inicial e aos detalhes, em `distanceMeters` e `distance`. É uma estimativa em linha reta, não a extensão de uma rota de carro ou a pé. Na ausência de coordenadas, a interface mostra “Distância indisponível”.
+O contexto de livros calcula a distância entre `users/{uid}.coordinates` do perfil autenticado e `books/{id}.ownerCoordinates` e fornece o resultado à página inicial e aos detalhes, em `distanceMeters` e `distance`. É uma estimativa em linha reta, não a extensão de uma rota de carro ou a pé.
 
-O catálogo inicial lê a coleção `books` do Firestore em tempo real, sem filtros, e usa os cards existentes para abrir os detalhes. Como os documentos de livros ainda não armazenam coordenadas dos donos, a distância aparece como indisponível. Os perfis continuam privados: o cliente não recebe permissão para consultar a localização de outras contas.
+Ao cadastrar um livro, o app grava `ownerCoordinates` com a localização atual do perfil do dono. Livros antigos que não possuem esse campo mostram “Distância indisponível” até serem recadastrados ou terem o campo atualizado manualmente no Firestore. Os perfis continuam privados: o cliente não recebe permissão para consultar `users/{outroUid}`.
 
-Validação local: `node --experimental-strip-types --test tests/distance.test.mjs`. Com o Firebase configurado, escolha um ponto no cadastro, confira `coordinates` no Console, altere/remova pela edição e reabra o perfil para verificar a persistência. Para testar a interface com dois pontos conhecidos, adicione temporariamente `ownerCoordinates` a um livro simulado.
+O catálogo inicial lê a coleção `books` do Firestore em tempo real. A leitura pública de livros é permitida pelas regras, mesmo para visitantes deslogados, enquanto a coleção `users` continua restrita ao próprio usuário.
+
+Com o Firebase configurado, escolha um ponto no cadastro, confira `coordinates` no perfil no Console, cadastre um novo livro e confirme que o documento contém `ownerCoordinates`. Verifique também a edição/removal da localização pela tela de perfil.
 
 ## Configuração
 
@@ -57,7 +59,7 @@ Para validar com o Firebase configurado:
 4. Altere o nome ou WhatsApp do documento pelo Firebase Console: a tela aberta deve atualizar os dados.
 5. Interrompa o acesso ao Firestore para verificar a mensagem de erro e o botão Tentar novamente.
 
-A visualização depende da sessão disponível no Firebase Authentication; o login de contas existentes ainda não faz parte deste fluxo.
+A visualização do perfil depende da sessão disponível no Firebase Authentication; visitantes podem continuar navegando pelos livros da página inicial sem login.
 
 ## Endereço e edição
 
@@ -84,29 +86,34 @@ As regras permitem criar e atualizar os arrays somente no perfil do próprio usu
 
 Neste estágio, as regras validam o tipo externo `list`, sem validar o formato de cada item. As regras do Firestore não oferecem um laço genérico para verificar todos os elementos de uma lista; o contrato e a validação dos objetos precisarão acompanhar a implementação do cadastro de livros. A leitura pelo app aceita somente itens que sejam objetos.
 
-Esses arrays não alimentam a página inicial nem `/profile-books`; a coleção `books` continua separada dos campos no perfil.
+Esses arrays não alimentam a página inicial nem `/profile/my-books`; a coleção `books` continua separada dos campos no perfil.
 
 Para ativar, publique o arquivo completo `database/firestore.rules` em **Firebase Console → Firestore Database → Regras**. As regras permitem os campos; é o código do cadastro que cria os arrays. Elas não adicionam campos automaticamente aos usuários antigos.
 
 Para validar, cadastre uma conta e confira os dois arrays vazios em `users/{uid}`. No simulador de regras, usando uma conta autenticada como dona do documento, confirme que atualizar com arrays de objetos é permitido e que texto/mapa/`null` são recusados. Uma conta diferente e uma requisição sem autenticação devem ser recusadas. Confira também que editar o perfil preserva listas preenchidas e que alterações de `uid`, `email` e `createdAt` continuam proibidas. O Console usa acesso administrativo e não serve para validar recusas das regras.
 
-A tela `/profile-books` consulta os livros do próprio usuário em lotes de 20, com a opção Carregar mais. A página inicial lê a coleção `books` em tempo real e exibe todos os livros cadastrados aos usuários autenticados, incluindo os próprios.
+As telas oficiais `/profile/my-books` e `/profile/my-trades` consultam os registros do usuário em lotes de 20, com a opção Carregar mais. `/profile/my-books` usa cards em grade e permite excluir os livros próprios. `/profile/my-trades` mostra solicitações enviadas e recebidas e permite realizar as ações disponíveis para o estado atual da troca. A página inicial lê a coleção `books` em tempo real e exibe os livros disponíveis aos visitantes e usuários autenticados.
 
 Contrato dos documentos:
 
-- `books/{id}`: `ownerId` (UID do dono), `title`, `author`, `type` (`donation` ou `exchange`) e `available` (boolean).
-- `trades/{id}`: `participantIds`, remetente e destinatário (UID e nome de exibição), snapshots dos livros oferecidos e solicitado (ID, título, autor e miniatura), `successConfirmedBy`, `status` e `createdAt`. Contatos ficam em `trades/{id}/contacts/{uid}` e só podem ser lidos pelos participantes após o aceite. Quando ambos confirmam sucesso, o status passa a `completed` e os documentos dos livros recebem `available: false`, `traded: true` e `completedTradeId`; continuam no banco, mas saem da lista de livros cadastrados do dono. Qualquer participante pode mudar uma negociação para `rejected`, mesmo que o outro já tenha confirmado sucesso.
+- `books/{id}`: `ownerId`, `owner`, `title`, `author`, `images`, `thumbnail`, `category`, `type`, `available`, `bookCondition`, informações opcionais da condição e da troca relacionada, `ownerCoordinates` e `createdAt`.
+- `trades/{id}`: `participantIds`, remetente e destinatário (UID e nome de exibição), `offeredBooks` (até 20 snapshots com ID, título, autor e miniatura), `requestedBook`, `status`, `successConfirmedBy` e `createdAt`.
+- `trades/{id}/contacts/{uid}`: `email` e `whatsapp` do participante. Os contatos são disponíveis apenas aos participantes após iniciar ou concluir a negociação.
 
-A tela de livros cadastrados consulta `ownerId == uid`; a tela de trocas usa `participantIds array-contains uid`. A página inicial lê a coleção de livros para qualquer usuário autenticado, enquanto as trocas continuam visíveis apenas aos participantes. O cadastro cria documentos de livros pelo app; as regras permitem que o dono os exclua e permitem marcar livros como negociados apenas durante a conclusão de uma troca válida. O fluxo cria solicitações pendentes, permite cancelar ou recusar, aceitar para iniciar a negociação, declinar ou confirmar sucesso por ambos os participantes. Publique `database/firestore.rules` para habilitar esse fluxo e a leitura condicional dos contatos.
+Os estados reconhecidos pelo fluxo são `pending`, `negotiating`, `cancelled`, `rejected` e `completed`. O remetente pode cancelar uma solicitação pendente. O destinatário pode recusá-la ou aceitá-la. Após o aceite, a troca fica em negociação e ambos os participantes podem confirmar sucesso ou declinar. Quando ambos confirmam, a troca fica `completed` e os livros envolvidos recebem `available: false`, `traded: true` e `completedTradeId`.
+
+A tela de livros cadastrados consulta `ownerId == uid`; a tela de trocas usa `participantIds array-contains uid`. A página inicial lê a coleção de livros publicamente, enquanto as trocas continuam visíveis apenas aos participantes. O cadastro cria documentos de livros pelo app; as regras permitem que o dono os exclua e permitem marcar livros como negociados apenas durante a conclusão de uma troca válida.
+
+O fluxo cria solicitações pendentes, permite ao remetente cancelar ou ao destinatário recusar/aceitar, iniciar a negociação, declinar ou confirmar sucesso por ambos os participantes. Os contatos só podem ser criados pelo próprio participante e são exibidos em `negotiating` ou `completed`. Publique `database/firestore.rules` para habilitar esse fluxo e a leitura condicional dos contatos.
 
 ## Validação das novas telas
 
 1. Cadastre um perfil com endereço e confira os campos em Meu perfil.
 2. Edite nome, WhatsApp e endereço; salve e reabra a tela para confirmar a persistência. Teste também Cancelar e a remoção de todos os campos opcionais de endereço.
 3. Tente salvar CEP ou UF inválidos, nome vazio e endereço parcial: a operação deve ser recusada.
-4. No Console, crie um livro com `ownerId` igual ao UID da conta e uma troca com esse UID em `participantIds`. Verifique as duas listas pelo perfil.
+4. No Console, crie um livro com `ownerId` igual ao UID da conta e `ownerCoordinates` igual às coordenadas desse perfil. Crie uma troca com esse UID em `participantIds`. Verifique as duas listas pelo perfil.
 5. Confirme que documentos de outra conta não aparecem e teste mais de 20 documentos para verificar Carregar mais.
-6. Em ambiente de teste com o emulador de regras, confirme que outra conta não consegue ler o perfil/endereço e que o cliente não consegue alterar UID, e-mail ou registrar trocas diretamente.
+6. Em ambiente de teste com o emulador de regras, confirme que outra conta não consegue ler o perfil/endereço, visitantes podem ler livros, o cliente não consegue alterar UID/e-mail e apenas participantes autorizados podem alterar uma troca.
 
 Os testes locais de endereço podem ser executados em Node com suporte a TypeScript nativo:
 

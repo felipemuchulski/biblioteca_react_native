@@ -2,44 +2,41 @@ import { AppColors } from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 import {
   ActivityIndicator,
-  Pressable,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 
-type Props = {
+interface IConfirmBookRegisterButtonProps {
   label: string;
   onPress: () => void;
   icon?: keyof typeof Ionicons.glyphMap;
   footer?: string;
   loading?: boolean;
   disabled?: boolean;
-};
+}
 
-export function ConfirmBookRegisterButton({
-  label,
-  onPress,
-  icon,
-  footer,
-  loading = false,
-  disabled = false,
-}: Props) {
+const ConfirmBookRegisterButton = (
+  props: IConfirmBookRegisterButtonProps,
+) => {
+  const {
+    label,
+    onPress,
+    icon,
+    footer,
+    loading = false,
+    disabled = false,
+  } = props;
   const inactive = disabled || loading;
 
   return (
     <View style={styles.wrapper}>
-      <Pressable
-        accessibilityRole="button"
+      <TouchableOpacity
         accessibilityLabel={label}
-        accessibilityState={{ disabled: inactive, busy: loading }}
         onPress={onPress}
         disabled={inactive}
-        style={({ pressed }) => [
-          styles.button,
-          pressed && styles.pressed,
-          inactive && styles.disabled,
-        ]}
+        style={[styles.button, inactive && styles.disabled]}
       >
         {loading ? (
           <ActivityIndicator color={AppColors.white} />
@@ -49,11 +46,13 @@ export function ConfirmBookRegisterButton({
             <Text style={styles.label}>{label}</Text>
           </>
         )}
-      </Pressable>
+      </TouchableOpacity>
       {!!footer && <Text style={styles.footer}>{footer}</Text>}
     </View>
   );
-}
+};
+
+export default ConfirmBookRegisterButton;
 
 const styles = StyleSheet.create({
   wrapper: { alignItems: "center", gap: 12 },
@@ -67,7 +66,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 10,
   },
-  pressed: { opacity: 0.85 },
   disabled: { opacity: 0.5 },
   label: { color: AppColors.white, fontSize: 16, fontWeight: "700" },
   footer: { fontSize: 13, color: AppColors.graySecondary },

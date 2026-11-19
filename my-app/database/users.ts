@@ -1,22 +1,19 @@
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 
 import { getFirebaseAuth } from "./firebase";
-import { isValidCoordinates, type Coordinates } from "../src/utils/distance";
-import {
-  addressFields,
-  emptyAddress,
-  normalizeAddress,
-  validateAddress,
-  type Address,
-} from "../src/utils/address";
+import { isValidCoordinates } from "../src/utils/distance";
+import { normalizeAddress, validateAddress } from "../src/utils/address";
+import { Address, addressFields, emptyAddress } from "@/constants/address";
+import { Coordinates } from "@/types";
 
 // O contrato dos campos do livro será definido no futuro cadastro de livros.
 export type UserBook = Record<string, unknown>;
 
 function readUserBooks(value: unknown): UserBook[] {
   if (!Array.isArray(value)) return [];
-  return value.filter((book): book is UserBook =>
-    book !== null && typeof book === "object" && !Array.isArray(book),
+  return value.filter(
+    (book): book is UserBook =>
+      book !== null && typeof book === "object" && !Array.isArray(book),
   );
 }
 
@@ -85,11 +82,13 @@ export async function subscribeToUserProfile(
           typeof data.displayName === "string" ? data.displayName : "",
         email: typeof data.email === "string" ? data.email : "",
         whatsapp: typeof data.whatsapp === "string" ? data.whatsapp : "",
-        coordinates: isValidCoordinates(data.coordinates) ? data.coordinates : null,
+        coordinates: isValidCoordinates(data.coordinates)
+          ? data.coordinates
+          : null,
         books: readUserBooks(data.books),
         likedBooks: readUserBooks(data.likedBooks),
         address: Object.fromEntries(
-          addressFields.map(([key]) => [
+          addressFields.map(({ key }) => [
             key,
             typeof data.address?.[key] === "string" ? data.address[key] : "",
           ]),
@@ -191,18 +190,21 @@ export async function registerUser(
         displayName: normalizedName,
         whatsapp,
         address: normalizeAddress(address),
-        coordinates: coordinates ? { latitude: coordinates.latitude, longitude: coordinates.longitude } : null,
+        coordinates: coordinates
+          ? { latitude: coordinates.latitude, longitude: coordinates.longitude }
+          : null,
         // Uma nova tentativa de cadastro não deve apagar livros já existentes.
-        ...(!('books' in existing) ? { books: [] } : {}),
-        ...(!('likedBooks' in existing) ? { likedBooks: [] } : {}),
+        ...(!("books" in existing) ? { books: [] } : {}),
+        ...(!("likedBooks" in existing) ? { likedBooks: [] } : {}),
       };
       if (snapshot.exists()) transaction.update(reference, data);
-      else transaction.set(reference, {
-        ...data,
-        uid: user.uid,
-        email: normalizedEmail,
-        createdAt: serverTimestamp(),
-      });
+      else
+        transaction.set(reference, {
+          ...data,
+          uid: user.uid,
+          email: normalizedEmail,
+          createdAt: serverTimestamp(),
+        });
     });
   } catch (cause) {
     throw new UserProfileSaveError(cause);
@@ -212,7 +214,9 @@ export async function registerUser(
 }
 
 export async function saveUserProfile(
-  values: Pick<UserProfile, "displayName" | "whatsapp" | "coordinates"> & { address: Address },
+  values: Pick<UserProfile, "displayName" | "whatsapp" | "coordinates"> & {
+    address: Address;
+  },
 ) {
   if (values.coordinates != null && !isValidCoordinates(values.coordinates)) {
     throw new Error("Selecione uma localização válida no mapa.");
@@ -236,11 +240,16 @@ export async function saveUserProfile(
       displayName,
       whatsapp,
       address: normalizeAddress(values.address),
-      ...(values.coordinates !== undefined ? {
-        coordinates: values.coordinates ? {
-          latitude: values.coordinates.latitude, longitude: values.coordinates.longitude,
-        } : null,
-      } : {}),
+      ...(values.coordinates !== undefined
+        ? {
+            coordinates: values.coordinates
+              ? {
+                  latitude: values.coordinates.latitude,
+                  longitude: values.coordinates.longitude,
+                }
+              : null,
+          }
+        : {}),
     };
     if (snapshot.exists()) transaction.update(reference, data);
     else

@@ -1,14 +1,15 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "@/constants/colors";
-import { Book } from "@/types/book";
+import { Book } from "@/types";
 import { formatTitleToInternValue } from "@/utils/formatter";
 
-interface BookCategoryListProps {
+interface IBookCategoryListProps {
   book: Book;
 }
 
-export function BookCategoryList({ book }: BookCategoryListProps) {
+const BookCategoryList = (props: IBookCategoryListProps) => {
+  const { book } = props;
   const { title, category } = book;
 
   function formatCategoryName(name: string) {
@@ -31,7 +32,9 @@ export function BookCategoryList({ book }: BookCategoryListProps) {
       ))}
     </View>
   );
-}
+};
+
+export default BookCategoryList;
 
 const styles = StyleSheet.create({
   categoryListContainer: { flex: 1, flexDirection: "row" },

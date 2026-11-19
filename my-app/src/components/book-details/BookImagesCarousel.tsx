@@ -1,21 +1,17 @@
 import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { AppColors } from "@/constants/colors";
-import { Book } from "@/types/book";
+import { Book } from "@/types";
 
-interface BookImagesCarouselProps {
+interface IBookImagesCarouselProps {
   book: Book;
   bookImages: string[];
   selectedImage: string;
   onPress: (value: string) => void;
 }
 
-export function BookImagesCarousel({
-  book,
-  bookImages,
-  selectedImage,
-  onPress,
-}: BookImagesCarouselProps) {
+const BookImagesCarousel = (props: IBookImagesCarouselProps) => {
+  const { book, bookImages, selectedImage, onPress } = props;
   const { id } = book;
 
   return (
@@ -32,17 +28,15 @@ export function BookImagesCarousel({
               selectedImage === image ? styles.selected : styles.unselected,
             ]}
           >
-            <Image
-              source={{ uri: image }}
-              style={[styles.cover]}
-              defaultSource={require("@/assets/images/icon.png")}
-            />
+            <Image source={{ uri: image }} style={[styles.cover]} />
           </View>
         </TouchableOpacity>
       ))}
     </View>
   );
-}
+};
+
+export default BookImagesCarousel;
 
 const styles = StyleSheet.create({
   carouselContainer: {

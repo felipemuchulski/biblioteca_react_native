@@ -13,41 +13,56 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
 import { AppColors } from "@/constants/colors";
-import { AddressFields } from "@/components/profile/AddressFields";
-import { Address, emptyAddress, validateAddress } from "@/utils/address";
-import {
-  setAddressSelectionHandler,
-  type SelectedLocation,
-} from "@/utils/address-selection";
+import AddressFields from "@/components/profile/AddressFields";
+import { useAddress } from "@/contexts/address-context";
 import {
   formatWhatsappInput,
   normalizeWhatsappNumber,
   registerUser,
   UserProfileSaveError,
 } from "../../../database/users";
+import { Address, emptyAddress } from "@/constants/address";
+import { validateAddress } from "@/utils/address";
 
-export default function RegisterUserScreen() {
-  const router = useRouter();
+const REGISTER_BOOK_ROUTE = "/register-book";
+const LOGIN_ROUTE = "/login";
+const ADDRESS_PICKER_ROUTE = "/address-picker";
+const MIN_PASSWORD_LENGTH = 6;
+
+interface IRegisterFormProps {
+  onBack: () => void;
+  returnTo?: string;
+}
+
+const RegisterForm = (props: IRegisterFormProps) => {
+  const { onBack, returnTo } = props;
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
-  const [coordinates, setCoordinates] = useState<SelectedLocation | null>(null);
+  const { selectedLocation: coordinates, setSelectedLocation: setCoordinates } =
+    useAddress();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [address, setAddress] = useState<Address>({ ...emptyAddress });
 
+  const router = useRouter();
+
   useEffect(() => {
-    setAddressSelectionHandler(setCoordinates);
-    return () => setAddressSelectionHandler(undefined);
-  }, []);
+    setCoordinates(null);
+  }, [setCoordinates]);
+
+  let mapLocationText = "Selecionar localização no mapa";
+  if (coordinates) {
+    mapLocationText = `Latitude: ${coordinates.latitude.toFixed(5)}... | Longitude: ${coordinates.longitude.toFixed(5)}...`;
+  }
 
   const handleRegister = async () => {
     if (submitting) return;
+
     setError("");
     const addressError = validateAddress(address);
     if (addressError) {
@@ -75,8 +90,10 @@ export default function RegisterUserScreen() {
       setError("A senha precisa ter pelo menos um caractere especial.");
       return;
     }
-    if (password.length < 6) {
-      setError("A senha precisa ter pelo menos 6 caracteres.");
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setError(
+        `A senha precisa ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.`,
+      );
       return;
     }
     if (password !== confirmPassword) {
@@ -94,7 +111,11 @@ export default function RegisterUserScreen() {
         address,
         coordinates,
       );
-      router.replace("/profile");
+      if (returnTo === REGISTER_BOOK_ROUTE) {
+        router.replace(REGISTER_BOOK_ROUTE);
+      } else {
+        router.replace(LOGIN_ROUTE);
+      }
     } catch (cause) {
       if (cause instanceof UserProfileSaveError) {
         const firestoreCause = cause.originalCause;
@@ -106,11 +127,15 @@ export default function RegisterUserScreen() {
             "O Firestore recusou os campos do perfil. Publique as regras atualizadas de database/firestore.rules e tente novamente; a conta já foi criada.",
           );
         } else {
-          setError(
-            firestoreCause instanceof FirebaseError
-              ? `A conta foi criada, mas o perfil não foi salvo (${firestoreCause.code}). Tente novamente após corrigir a configuração do Firestore.`
-              : "A conta foi criada, mas o perfil não foi salvo. Tente novamente após conferir a configuração do Firestore.",
-          );
+          if (firestoreCause instanceof FirebaseError) {
+            setError(
+              `A conta foi criada, mas o perfil não foi salvo (${firestoreCause.code}). Tente novamente após corrigir a configuração do Firestore.`,
+            );
+          } else {
+            setError(
+              "A conta foi criada, mas o perfil não foi salvo. Tente novamente após conferir a configuração do Firestore.",
+            );
+          }
         }
       } else if (cause instanceof FirebaseError) {
         const messages: Record<string, string> = {
@@ -122,16 +147,18 @@ export default function RegisterUserScreen() {
           "auth/operation-not-allowed":
             "Ative o cadastro por e-mail e senha no Firebase Console.",
         };
-        setError(
-          messages[cause.code] ??
-            "Não foi possível criar a conta. Tente novamente.",
-        );
+        const firebaseErrorMessage = messages[cause.code];
+        if (firebaseErrorMessage) {
+          setError(firebaseErrorMessage);
+        } else {
+          setError("Não foi possível criar a conta. Tente novamente.");
+        }
       } else {
-        setError(
-          cause instanceof Error
-            ? cause.message
-            : "Não foi possível criar a conta.",
-        );
+        if (cause instanceof Error) {
+          setError(cause.message);
+        } else {
+          setError("Não foi possível criar a conta.");
+        }
       }
     } finally {
       setSubmitting(false);
@@ -139,19 +166,18 @@ export default function RegisterUserScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={styles.safe}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
           <TouchableOpacity
-            accessibilityRole="button"
             accessibilityLabel="Voltar"
-            onPress={() => router.back()}
+            onPress={onBack}
             style={styles.backButton}
           >
             <Ionicons name="arrow-back" size={22} color={AppColors.darkBlue} />
@@ -175,38 +201,29 @@ export default function RegisterUserScreen() {
             <Text style={styles.label}>Nome</Text>
             <TextInput
               autoCapitalize="words"
-              autoComplete="name"
               onChangeText={setName}
               placeholder="Como podemos chamar você?"
-              placeholderTextColor={AppColors.graySecondary}
               style={styles.input}
               value={name}
-              returnKeyType="next"
             />
 
             <Text style={styles.label}>E-mail</Text>
             <TextInput
               autoCapitalize="none"
-              autoComplete="email"
               keyboardType="email-address"
               onChangeText={setEmail}
               placeholder="voce@exemplo.com"
-              placeholderTextColor={AppColors.graySecondary}
               style={styles.input}
               value={email}
-              returnKeyType="next"
             />
 
             <Text style={styles.label}>WhatsApp</Text>
             <TextInput
-              autoComplete="tel"
               keyboardType="phone-pad"
               onChangeText={(value) => setWhatsapp(formatWhatsappInput(value))}
               placeholder="+55 (11) 99999-9999"
-              placeholderTextColor={AppColors.graySecondary}
               style={styles.input}
               value={whatsapp}
-              returnKeyType="next"
             />
 
             <AddressFields
@@ -215,17 +232,12 @@ export default function RegisterUserScreen() {
               disabled={submitting}
             />
             <TouchableOpacity
-              accessibilityRole="button"
               disabled={submitting}
-              onPress={() => router.push("/address-picker" as never)}
+              onPress={() => router.push(ADDRESS_PICKER_ROUTE as never)}
               style={styles.mapButton}
             >
               <Ionicons name="map-outline" size={20} color={AppColors.blue} />
-              <Text style={styles.mapButtonText}>
-                {coordinates
-                  ? `Latitude: ${coordinates.latitude.toFixed(5)}... | Longitude: ${coordinates.longitude.toFixed(5)}...`
-                  : "Selecionar localização no mapa"}
-              </Text>
+              <Text style={styles.mapButtonText}>{mapLocationText}</Text>
               <Ionicons
                 name="chevron-forward"
                 size={18}
@@ -246,39 +258,26 @@ export default function RegisterUserScreen() {
             <Text style={styles.label}>Senha</Text>
             <TextInput
               autoCapitalize="none"
-              autoComplete="new-password"
               onChangeText={setPassword}
               placeholder="Pelo menos 6 caracteres"
-              placeholderTextColor={AppColors.graySecondary}
               secureTextEntry
               style={styles.input}
               value={password}
-              returnKeyType="done"
-              onSubmitEditing={handleRegister}
             />
 
             <Text style={styles.label}>Confirme sua senha</Text>
             <TextInput
               autoCapitalize="none"
-              autoComplete="new-password"
               onChangeText={setConfirmPassword}
               placeholder="Digite a senha novamente"
-              placeholderTextColor={AppColors.graySecondary}
               secureTextEntry
               style={styles.input}
               value={confirmPassword}
-              returnKeyType="done"
-              onSubmitEditing={handleRegister}
             />
 
-            {error ? (
-              <Text accessibilityRole="alert" style={styles.error}>
-                {error}
-              </Text>
-            ) : null}
+            {error ? <Text style={styles.error}>{error}</Text> : null}
 
             <TouchableOpacity
-              accessibilityRole="button"
               disabled={submitting}
               onPress={handleRegister}
               style={[styles.submit, submitting && styles.submitDisabled]}
@@ -292,13 +291,15 @@ export default function RegisterUserScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
-}
+};
+
+export default RegisterForm;
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  safe: { flex: 1, backgroundColor: AppColors.background },
+  safe: { flex: 1, paddingTop: 24, backgroundColor: AppColors.background },
   content: { flexGrow: 1, paddingHorizontal: 24, paddingBottom: 32 },
   backButton: { width: 44, height: 44, justifyContent: "center" },
   heading: { alignItems: "center", marginTop: 36, marginBottom: 36 },

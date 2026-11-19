@@ -1,20 +1,24 @@
 import { AppColors } from "@/constants/colors";
-import type { Book } from "@/types/book";
+import type { Book } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
-type BookOwnerCardProps = Pick<
+interface IBookOwnerCardProps extends Pick<
   Book,
   "owner" | "distance" | "distanceMeters" | "ownerNeighborhood" | "ownerCity"
->;
+> {
+  isOwner?: boolean;
+}
 
-export function BookOwnerCard({
-  owner,
-  distance,
-  distanceMeters,
-  ownerNeighborhood,
-  ownerCity,
-}: BookOwnerCardProps) {
+const BookOwnerCard = (props: IBookOwnerCardProps) => {
+  const {
+    owner,
+    isOwner = false,
+    distance,
+    distanceMeters,
+    ownerNeighborhood,
+    ownerCity,
+  } = props;
   const formattedOwnerName = owner?.trim().charAt(0).toUpperCase() || "?";
   const formattedLocation = [ownerNeighborhood, ownerCity]
     .filter(Boolean)
@@ -30,8 +34,11 @@ export function BookOwnerCard({
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{formattedOwnerName}</Text>
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.name}>{owner}</Text>
+          <View style={styles.nameContainer}>
+            <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
+              {owner}
+              {isOwner ? <Text style={styles.you}> (você)</Text> : null}
+            </Text>
           </View>
         </View>
 
@@ -53,17 +60,15 @@ export function BookOwnerCard({
       </View>
     </View>
   );
-}
+};
+
+export default BookOwnerCard;
 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: AppColors.white,
     borderRadius: 18,
     padding: 16,
-    shadowColor: AppColors.darkBlue,
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
   header: {
@@ -82,6 +87,8 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontSize: 20, fontWeight: "700", color: AppColors.darkBlue },
   name: { fontSize: 17, fontWeight: "700", color: AppColors.darkBlue },
+  you: { fontSize: 13, color: AppColors.graySecondary, fontWeight: "400" },
+  nameContainer: { flex: 1 },
   locationRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
   distance: { flex: 1, fontSize: 15, fontWeight: "700", color: AppColors.blue },
   place: { fontSize: 13, color: AppColors.categoryText, marginTop: 2 },

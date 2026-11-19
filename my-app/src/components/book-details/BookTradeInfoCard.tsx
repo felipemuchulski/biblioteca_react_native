@@ -2,14 +2,15 @@ import { AppColors } from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
-type BookTradeInfoCardProps = {
+interface IBookTradeInfoCardProps {
   ownerName: string;
-};
+}
 
-export function BookTradeInfoCard({ ownerName }: BookTradeInfoCardProps) {
+const BookTradeInfoCard = (props: IBookTradeInfoCardProps) => {
+  const { ownerName } = props;
   return (
     <View style={styles.panel}>
-      <Text accessibilityRole="header" style={styles.title}>
+      <Text style={styles.title}>
         Gostou? Ofereça um livro.
       </Text>
       <Text style={styles.subtitle}>
@@ -20,7 +21,7 @@ export function BookTradeInfoCard({ ownerName }: BookTradeInfoCardProps) {
         <View style={styles.iconBox}>
           <Ionicons name="book-outline" size={20} color={AppColors.lightBlue} />
         </View>
-        <View style={{ flex: 1 }}>
+        <View style={styles.stepInfo}>
           <Text style={styles.stepTitle}>Anuncie o seu exemplar</Text>
           <Text style={styles.stepDesc}>
             Adicione fotos e informações do livro que quer oferecer.
@@ -36,7 +37,7 @@ export function BookTradeInfoCard({ ownerName }: BookTradeInfoCardProps) {
             color={AppColors.lightBlue}
           />
         </View>
-        <View style={{ flex: 1 }}>
+        <View style={styles.stepInfo}>
           <Text
             style={styles.stepTitle}
           >{`Ofereça a troca ao ${ownerName}`}</Text>
@@ -47,17 +48,15 @@ export function BookTradeInfoCard({ ownerName }: BookTradeInfoCardProps) {
       </View>
     </View>
   );
-}
+};
+
+export default BookTradeInfoCard;
 
 const styles = StyleSheet.create({
   panel: {
     backgroundColor: "#d1d5e0",
     borderRadius: 18,
     padding: 16,
-    shadowColor: AppColors.darkBlue,
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
   title: {
@@ -73,6 +72,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   step: { flexDirection: "row", gap: 12, marginBottom: 12 },
+  stepInfo: { flex: 1 },
   iconBox: {
     width: 36,
     height: 36,

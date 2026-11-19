@@ -1,5 +1,5 @@
 import { AppColors } from "@/constants/colors";
-import type { BookCondition } from "@/types/book";
+import type { BookCondition } from "@/types";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 const OPTIONS: { value: BookCondition; label: string; hint: string }[] = [
@@ -25,27 +25,26 @@ const OPTIONS: { value: BookCondition; label: string; hint: string }[] = [
   },
 ];
 
-type Props = {
+interface IConditionSelectorProps {
   value: BookCondition | null;
   onChange: (value: BookCondition) => void;
   error?: string;
-};
+}
 
-export function ConditionSelector({ value, onChange, error }: Props) {
+const ConditionSelector = (props: IConditionSelectorProps) => {
+  const { value, onChange, error } = props;
   const selected = OPTIONS.find((o) => o.value === value);
 
   return (
     <View style={styles.wrapper}>
       <Text style={styles.label}>Condição do livro</Text>
 
-      <View accessibilityRole="radiogroup" style={styles.grid}>
+      <View style={styles.grid}>
         {OPTIONS.map((option) => {
           const isSelected = option.value === value;
           return (
             <Pressable
               key={option.value}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: isSelected }}
               onPress={() => onChange(option.value)}
               style={[styles.option, isSelected && styles.optionSelected]}
             >
@@ -72,7 +71,9 @@ export function ConditionSelector({ value, onChange, error }: Props) {
       ) : null}
     </View>
   );
-}
+};
+
+export default ConditionSelector;
 
 const styles = StyleSheet.create({
   wrapper: { gap: 8 },

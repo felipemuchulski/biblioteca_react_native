@@ -40,7 +40,7 @@ service cloud.firestore {
     }
 
     // Campos opcionais para manter compatibilidade com perfis antigos.
-    // O formato de cada objeto será definido no fluxo de cadastro de livros.
+    // O formato de cada objeto sera definido no fluxo de cadastro de livros.
     function validBookLists(data) {
       return (!('books' in data) || data.books is list)
         && (!('likedBooks' in data) || data.likedBooks is list);
@@ -56,7 +56,7 @@ service cloud.firestore {
       return data.keys().hasOnly([
           'ownerId', 'owner', 'title', 'author', 'images', 'thumbnail',
           'category', 'type', 'available', 'bookCondition',
-          'bookConditionNote', 'tradeWithBookId', 'createdAt'
+          'bookConditionNote', 'tradeWithBookId', 'ownerCoordinates', 'createdAt'
         ])
         && data.keys().hasAll([
           'ownerId', 'owner', 'title', 'author', 'images', 'thumbnail',
@@ -76,6 +76,16 @@ service cloud.firestore {
           || (data.bookConditionNote is string && data.bookConditionNote.size() <= 300))
         && (!('tradeWithBookId' in data)
           || (data.tradeWithBookId is string && data.tradeWithBookId.size() <= 120))
+        && (!('ownerCoordinates' in data) || data.ownerCoordinates == null
+          || (data.ownerCoordinates is map
+            && data.ownerCoordinates.keys().hasOnly(['latitude', 'longitude'])
+            && data.ownerCoordinates.keys().hasAll(['latitude', 'longitude'])
+            && data.ownerCoordinates.latitude is number
+            && data.ownerCoordinates.latitude >= -90
+            && data.ownerCoordinates.latitude <= 90
+            && data.ownerCoordinates.longitude is number
+            && data.ownerCoordinates.longitude >= -180
+            && data.ownerCoordinates.longitude <= 180))
         && data.createdAt == request.time;
     }
 
@@ -215,7 +225,7 @@ service cloud.firestore {
     }
 
     match /books/{bookId} {
-      allow read: if request.auth != null;
+      allow read: if true;
       allow create: if request.auth != null && validBook(request.resource.data);
       allow update: if request.auth != null
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([

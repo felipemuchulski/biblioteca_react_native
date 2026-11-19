@@ -14,9 +14,13 @@ import { useState } from "react";
 import { Timestamp } from "firebase/firestore";
 import { Ionicons } from "@expo/vector-icons";
 import { deleteBook } from "../../../database/books";
-import { acceptTrade, cancelTrade, confirmTradeSuccess, declineNegotiation, rejectTrade } from "../../../database/trades";
-import { AddBookButton } from "@/components/home/AddBookButton";
-import { ScreenBackButton } from "@/components/navigation/ScreenBackButton";
+import {
+  acceptTrade,
+  cancelTrade,
+  confirmTradeSuccess,
+  declineNegotiation,
+  rejectTrade,
+} from "../../../database/trades";
 import { AppColors } from "@/constants/colors";
 import { TradeContactInfo } from "@/components/profile/TradeContactInfo";
 import { useProfile } from "@/hooks/use-profile";
@@ -25,6 +29,8 @@ import {
   type ProfileRecord,
   type RecordKind,
 } from "@/hooks/use-profile-records";
+import AddBookButton from "../home/AddBookButton";
+import ScreenBackButton from "../navigation/ScreenBackButton";
 
 const text = (value: unknown, fallback: string) =>
   typeof value === "string" && value.trim() ? value : fallback;
@@ -52,18 +58,28 @@ function RecordCard({
   onDelete: (id: string, title: string) => void;
   currentUid?: string;
   responding: boolean;
-  onTradeAction: (id: string, action: "cancel" | "reject" | "accept" | "decline" | "success") => void;
+  onTradeAction: (
+    id: string,
+    action: "cancel" | "reject" | "accept" | "decline" | "success",
+  ) => void;
 }) {
   const data = item.data;
   if (kind === "books") {
     const images = Array.isArray(data.images)
-      ? data.images.filter((image: unknown): image is string => typeof image === "string" && !!image.trim())
+      ? data.images.filter(
+          (image: unknown): image is string =>
+            typeof image === "string" && !!image.trim(),
+        )
       : [];
     const imageUri = images[0] || text(data.thumbnail, "");
     return (
       <View style={styles.card}>
         <View style={styles.bookImageContainer}>
-          {imageUri ? <BookCover uri={imageUri} /> : <Text style={styles.imageFallback}>Falha ao carregar imagem</Text>}
+          {imageUri ? (
+            <BookCover uri={imageUri} />
+          ) : (
+            <Text style={styles.imageFallback}>Falha ao carregar imagem</Text>
+          )}
         </View>
         <Text style={styles.title}>{text(data.title, "Livro sem título")}</Text>
         <Text style={styles.body}>
@@ -104,26 +120,50 @@ function RecordCard({
     data.createdAt instanceof Timestamp
       ? data.createdAt.toDate().toLocaleDateString("pt-BR")
       : "";
-  const sender = data.sender && typeof data.sender === "object" ? data.sender as Record<string, unknown> : {};
-  const recipient = data.recipient && typeof data.recipient === "object" ? data.recipient as Record<string, unknown> : {};
-  const requestedBook = data.requestedBook && typeof data.requestedBook === "object" ? data.requestedBook as Record<string, unknown> : {};
-  const offeredBooks = Array.isArray(data.offeredBooks) ? data.offeredBooks as Record<string, unknown>[] : [];
-  const offeredTitles = offeredBooks.map((book) => text(book.title, "Livro")).join(", ");
+  const sender =
+    data.sender && typeof data.sender === "object"
+      ? (data.sender as Record<string, unknown>)
+      : {};
+  const recipient =
+    data.recipient && typeof data.recipient === "object"
+      ? (data.recipient as Record<string, unknown>)
+      : {};
+  const requestedBook =
+    data.requestedBook && typeof data.requestedBook === "object"
+      ? (data.requestedBook as Record<string, unknown>)
+      : {};
+  const offeredBooks = Array.isArray(data.offeredBooks)
+    ? (data.offeredBooks as Record<string, unknown>[])
+    : [];
+  const offeredTitles = offeredBooks
+    .map((book) => text(book.title, "Livro"))
+    .join(", ");
   const isSender = sender.uid === currentUid;
   const isRecipient = recipient.uid === currentUid;
   const pending = data.status === "pending";
   const negotiating = data.status === "negotiating";
   const completed = data.status === "completed";
-  const alreadyConfirmed = Array.isArray(data.successConfirmedBy)
-    && data.successConfirmedBy.includes(currentUid);
-  const otherUserId = (isSender ? recipient.uid : sender.uid);
-  const otherName = text(isSender ? recipient.displayName : sender.displayName, "outro participante");
+  const alreadyConfirmed =
+    Array.isArray(data.successConfirmedBy) &&
+    data.successConfirmedBy.includes(currentUid);
+  const otherUserId = isSender ? recipient.uid : sender.uid;
+  const otherName = text(
+    isSender ? recipient.displayName : sender.displayName,
+    "outro participante",
+  );
   return (
     <View style={styles.card}>
       <Text style={styles.title}>Solicitação de troca</Text>
       <Text style={styles.body}>
-        {isRecipient ? `${text(sender.displayName, "Um usuário")} oferece ` : "Você ofereceu "}
-        {offeredTitles || text(data.offeredBookTitle, "um livro")} por {text(requestedBook.title, text(data.requestedBookTitle, "um livro solicitado"))}.
+        {isRecipient
+          ? `${text(sender.displayName, "Um usuário")} oferece `
+          : "Você ofereceu "}
+        {offeredTitles || text(data.offeredBookTitle, "um livro")} em troca de{" "}
+        {text(
+          requestedBook.title,
+          text(data.requestedBookTitle, "um livro solicitado"),
+        )}
+        .
       </Text>
       <Text style={styles.body}>
         Situação: {statuses[text(data.status, "")] ?? "Não informada"}
@@ -132,26 +172,72 @@ function RecordCard({
       {negotiating && item.hasPendingWrites && (
         <View style={styles.contactLoading}>
           <ActivityIndicator color={AppColors.blue} size="small" />
-          <Text style={styles.body}>Aguardando confirmação para carregar os contatos...</Text>
+          <Text style={styles.body}>
+            Aguardando confirmação para carregar os contatos...
+          </Text>
         </View>
       )}
-      {negotiating && !item.hasPendingWrites && typeof otherUserId === "string" && (
-        <TradeContactInfo tradeId={item.id} otherUserId={otherUserId} otherName={otherName} />
-      )}
-      {completed && !item.hasPendingWrites && typeof otherUserId === "string" && (
-        <TradeContactInfo tradeId={item.id} otherUserId={otherUserId} otherName={otherName} />
-      )}
+      {negotiating &&
+        !item.hasPendingWrites &&
+        typeof otherUserId === "string" && (
+          <TradeContactInfo
+            tradeId={item.id}
+            otherUserId={otherUserId}
+            otherName={otherName}
+          />
+        )}
+      {completed &&
+        !item.hasPendingWrites &&
+        typeof otherUserId === "string" && (
+          <TradeContactInfo
+            tradeId={item.id}
+            otherUserId={otherUserId}
+            otherName={otherName}
+          />
+        )}
       {pending && isSender && (
-        <TouchableOpacity disabled={responding} onPress={() => onTradeAction(item.id, "cancel")} style={[styles.tradeAction, styles.cancelAction, responding && styles.disabledButton]}>
-          {responding ? <ActivityIndicator color={AppColors.danger} size="small" /> : <Text style={styles.cancelText}>Cancelar solicitação</Text>}
+        <TouchableOpacity
+          disabled={responding}
+          onPress={() => onTradeAction(item.id, "cancel")}
+          style={[
+            styles.tradeAction,
+            styles.cancelAction,
+            responding && styles.disabledButton,
+          ]}
+        >
+          {responding ? (
+            <ActivityIndicator color={AppColors.danger} size="small" />
+          ) : (
+            <Text style={styles.cancelText}>Cancelar solicitação</Text>
+          )}
         </TouchableOpacity>
       )}
       {pending && isRecipient && (
         <View style={styles.tradeActions}>
-          <TouchableOpacity disabled={responding} onPress={() => onTradeAction(item.id, "reject")} style={[styles.tradeAction, styles.cancelAction, responding && styles.disabledButton]}>
-            {responding ? <ActivityIndicator color={AppColors.danger} size="small" /> : <Text style={styles.cancelText}>Recusar</Text>}
+          <TouchableOpacity
+            disabled={responding}
+            onPress={() => onTradeAction(item.id, "reject")}
+            style={[
+              styles.tradeAction,
+              styles.cancelAction,
+              responding && styles.disabledButton,
+            ]}
+          >
+            {responding ? (
+              <ActivityIndicator color={AppColors.danger} size="small" />
+            ) : (
+              <Text style={styles.cancelText}>Recusar</Text>
+            )}
           </TouchableOpacity>
-          <TouchableOpacity disabled={responding} onPress={() => onTradeAction(item.id, "accept")} style={[styles.tradeAction, styles.acceptAction, responding && styles.disabledButton]}>
+          <TouchableOpacity
+            disabled={responding}
+            onPress={() => onTradeAction(item.id, "accept")}
+            style={[
+              styles.tradeAction,
+              styles.acceptAction,
+              responding && styles.disabledButton,
+            ]}
+          >
             <Text style={styles.acceptText}>Aceitar</Text>
           </TouchableOpacity>
         </View>
@@ -161,12 +247,36 @@ function RecordCard({
           <TouchableOpacity
             disabled={responding || alreadyConfirmed}
             onPress={() => onTradeAction(item.id, "success")}
-            style={[styles.tradeAction, styles.acceptAction, (responding || alreadyConfirmed) && styles.disabledButton]}
+            style={[
+              styles.tradeAction,
+              styles.acceptAction,
+              (responding || alreadyConfirmed) && styles.disabledButton,
+            ]}
           >
-            {responding ? <ActivityIndicator color={AppColors.white} size="small" /> : <Text style={styles.acceptText}>{alreadyConfirmed ? "Aguardando outra confirmação" : "Troca bem-sucedida"}</Text>}
+            {responding ? (
+              <ActivityIndicator color={AppColors.white} size="small" />
+            ) : (
+              <Text style={styles.acceptText}>
+                {alreadyConfirmed
+                  ? "Aguardando outra confirmação"
+                  : "Troca bem-sucedida"}
+              </Text>
+            )}
           </TouchableOpacity>
-          <TouchableOpacity disabled={responding} onPress={() => onTradeAction(item.id, "decline")} style={[styles.tradeAction, styles.cancelAction, responding && styles.disabledButton]}>
-            {responding ? <ActivityIndicator color={AppColors.danger} size="small" /> : <Text style={styles.cancelText}>Troca declinada</Text>}
+          <TouchableOpacity
+            disabled={responding}
+            onPress={() => onTradeAction(item.id, "decline")}
+            style={[
+              styles.tradeAction,
+              styles.cancelAction,
+              responding && styles.disabledButton,
+            ]}
+          >
+            {responding ? (
+              <ActivityIndicator color={AppColors.danger} size="small" />
+            ) : (
+              <Text style={styles.cancelText}>Troca declinada</Text>
+            )}
           </TouchableOpacity>
         </View>
       )}
@@ -176,8 +286,17 @@ function RecordCard({
 
 function BookCover({ uri }: { uri: string }) {
   const [failed, setFailed] = useState(false);
-  if (failed) return <Text style={styles.imageFallback}>Falha ao carregar imagem</Text>;
-  return <Image source={{ uri }} style={styles.bookImage} resizeMode="cover" onError={() => setFailed(true)} accessibilityLabel="Capa do livro" />;
+  if (failed)
+    return <Text style={styles.imageFallback}>Falha ao carregar imagem</Text>;
+  return (
+    <Image
+      source={{ uri }}
+      style={styles.bookImage}
+      resizeMode="cover"
+      onError={() => setFailed(true)}
+      accessibilityLabel="Capa do livro"
+    />
+  );
 }
 
 export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
@@ -193,21 +312,33 @@ export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [respondingId, setRespondingId] = useState<string | null>(null);
 
-  const respondToTrade = async (id: string, action: "cancel" | "reject" | "accept" | "decline" | "success") => {
-    const actionLabel = action === "cancel" ? "cancelar" : action === "reject" ? "recusar" : "declinar";
+  const respondToTrade = async (
+    id: string,
+    action: "cancel" | "reject" | "accept" | "decline" | "success",
+  ) => {
+    const actionLabel =
+      action === "cancel"
+        ? "cancelar"
+        : action === "reject"
+          ? "recusar"
+          : "declinar";
     const perform = async () => {
       setRespondingId(id);
       try {
         if (action === "cancel") await cancelTrade(id);
         else if (action === "reject") await rejectTrade(id);
-        else if (action === "accept") await acceptTrade(id, {
-          email: user?.email ?? profile?.email ?? "",
-          whatsapp: profile?.whatsapp ?? "",
-        });
+        else if (action === "accept")
+          await acceptTrade(id, {
+            email: user?.email ?? profile?.email ?? "",
+            whatsapp: profile?.whatsapp ?? "",
+          });
         else if (action === "success") await confirmTradeSuccess(id);
         else await declineNegotiation(id);
       } catch (cause) {
-        const message = cause instanceof Error ? cause.message : "Tente novamente mais tarde.";
+        const message =
+          cause instanceof Error
+            ? cause.message
+            : "Tente novamente mais tarde.";
         if (Platform.OS === "web") globalThis.alert(message);
         else Alert.alert("Não foi possível atualizar a solicitação", message);
       } finally {
@@ -225,7 +356,16 @@ export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
     }
     Alert.alert("Confirmar ação", message, [
       { text: "Voltar", style: "cancel" },
-      { text: action === "cancel" ? "Cancelar solicitação" : action === "reject" ? "Recusar" : "Declinar troca", style: "destructive", onPress: () => void perform() },
+      {
+        text:
+          action === "cancel"
+            ? "Cancelar solicitação"
+            : action === "reject"
+              ? "Recusar"
+              : "Declinar troca",
+        style: "destructive",
+        onPress: () => void perform(),
+      },
     ]);
   };
 
@@ -236,7 +376,9 @@ export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
         await deleteBook(id);
       } catch (cause) {
         const message =
-          cause instanceof Error ? cause.message : "Não foi possível excluir o livro.";
+          cause instanceof Error
+            ? cause.message
+            : "Não foi possível excluir o livro.";
         if (Platform.OS === "web") globalThis.alert(message);
         else Alert.alert("Erro ao excluir", message);
       } finally {
@@ -269,7 +411,10 @@ export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
               <ScreenBackButton />
             </View>
             {kind === "books" && (
-              <Text accessibilityRole="header" style={styles.recordsHeaderTitle}>
+              <Text
+                accessibilityRole="header"
+                style={styles.recordsHeaderTitle}
+              >
                 Meus Livros Cadastrados
               </Text>
             )}
@@ -315,8 +460,8 @@ export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
               <Text style={styles.body}>
                 Crie seu perfil para acessar esta lista.
               </Text>
-              <Link href="/register-user" style={styles.link}>
-                Criar perfil
+              <Link href="/login" style={styles.link}>
+                Ir para o login
               </Link>
             </View>
           ) : (
@@ -336,7 +481,7 @@ export function ProfileRecordsScreen({ kind }: { kind: RecordKind }) {
             >
               <Text style={styles.buttonText}>Carregar mais</Text>
             </TouchableOpacity>
-          ) : null
+          ) : undefined
         }
       />
     </>
@@ -374,9 +519,23 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     gap: 10,
   },
-  bookImageContainer: { width: 112, height: 148, alignSelf: "center", borderRadius: 10, overflow: "hidden", backgroundColor: AppColors.border, alignItems: "center", justifyContent: "center" },
+  bookImageContainer: {
+    width: 112,
+    height: 148,
+    alignSelf: "center",
+    borderRadius: 10,
+    overflow: "hidden",
+    backgroundColor: AppColors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   bookImage: { width: "100%", height: "100%" },
-  imageFallback: { color: AppColors.categoryText, textAlign: "center", padding: 8, lineHeight: 20 },
+  imageFallback: {
+    color: AppColors.categoryText,
+    textAlign: "center",
+    padding: 8,
+    lineHeight: 20,
+  },
   title: { color: AppColors.darkBlue, fontSize: 18, fontWeight: "700" },
   body: { color: AppColors.categoryText, lineHeight: 22 },
   button: {
@@ -400,7 +559,14 @@ const styles = StyleSheet.create({
   disabledButton: { opacity: 0.6 },
   tradeActions: { flexDirection: "row", gap: 10 },
   contactLoading: { flexDirection: "row", alignItems: "center", gap: 8 },
-  tradeAction: { flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: 12, paddingHorizontal: 12 },
+  tradeAction: {
+    flex: 1,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+  },
   cancelAction: { backgroundColor: "#FCEBEC" },
   cancelText: { color: AppColors.danger, fontWeight: "700" },
   acceptAction: { backgroundColor: AppColors.blue },

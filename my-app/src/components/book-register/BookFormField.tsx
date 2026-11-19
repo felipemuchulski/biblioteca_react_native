@@ -3,39 +3,54 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TextInputProps,
   View,
 } from "react-native";
+import type { StyleProp, TextStyle } from "react-native";
 
-type Props = TextInputProps & {
+interface IBookFormFieldProps {
   label: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder?: string;
   error?: string;
   hint?: string;
-};
+  multiline?: boolean;
+  maxLength?: number;
+  autoCapitalize?: "none" | "sentences" | "words" | "characters";
+  style?: StyleProp<TextStyle>;
+}
 
-export function BookFormField({
-  label,
-  error,
-  hint,
-  style,
-  multiline,
-  ...inputProps
-}: Props) {
+const BookFormField = (props: IBookFormFieldProps) => {
+  const {
+    label,
+    value,
+    onChangeText,
+    placeholder,
+    error,
+    hint,
+    style,
+    multiline,
+    maxLength,
+    autoCapitalize,
+  } = props;
   return (
     <View style={styles.wrapper}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
         accessibilityLabel={label}
-        placeholderTextColor={AppColors.graySecondary}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
         multiline={multiline}
-        textAlignVertical={multiline ? "top" : "center"}
+        textAlignVertical={multiline ? "top" : "auto"}
+        maxLength={maxLength}
+        autoCapitalize={autoCapitalize}
         style={[
           styles.input,
           multiline && styles.multiline,
           !!error && styles.inputError,
           style,
         ]}
-        {...inputProps}
       />
       {error ? (
         <Text style={styles.error}>{error}</Text>
@@ -44,7 +59,9 @@ export function BookFormField({
       ) : null}
     </View>
   );
-}
+};
+
+export default BookFormField;
 
 const styles = StyleSheet.create({
   wrapper: { gap: 6 },

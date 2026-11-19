@@ -1,5 +1,3 @@
-import { Platform } from "react-native";
-
 type CloudinaryUploadResponse = {
   secure_url?: string;
   error?: { message?: string };
@@ -10,38 +8,24 @@ const getCloudinaryConfig = () => {
   const uploadPreset = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET?.trim();
 
   if (!cloudName || !uploadPreset) {
-    throw new Error(
+    console.error(
       "Configure EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME e EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET para enviar as imagens.",
+    );
+    throw new Error(
+      "Erro ao enviar imagens. Pendente cloudName e uploadPreset.",
     );
   }
 
   return { cloudName, uploadPreset };
 };
 
-async function uploadImage(uri: string): Promise<string> {
+const uploadImage = async (uri: string): Promise<string> => {
   const { cloudName, uploadPreset } = getCloudinaryConfig();
   const form = new FormData();
-  const extension = uri.split("?")[0].split(".").pop()?.toLowerCase();
-  const mimeType =
-    extension === "png"
-      ? "image/png"
-      : extension === "webp"
-        ? "image/webp"
-        : "image/jpeg";
-
-  const filename = `book-${Date.now()}.${extension || "jpg"}`;
-  if (Platform.OS === "web") {
-    const fileResponse = await fetch(uri);
-    if (!fileResponse.ok) {
-      throw new Error("Não foi possível ler a imagem selecionada.");
-    }
-    form.append("file", await fileResponse.blob(), filename);
-  } else {
-    form.append(
-      "file",
-      { uri, name: filename, type: mimeType } as unknown as Blob,
-    );
+  if (!uri.startsWith("data:image/")) {
+    throw new Error("Não foi possível obter os dados da imagem selecionada.");
   }
+  form.append("file", uri);
   form.append("upload_preset", uploadPreset);
 
   const response = await fetch(
@@ -49,24 +33,25 @@ async function uploadImage(uri: string): Promise<string> {
     { method: "POST", body: form },
   );
 
-  let result: CloudinaryUploadResponse;
+  let cloudinaryResponse: CloudinaryUploadResponse;
   try {
-    result = (await response.json()) as CloudinaryUploadResponse;
-  } catch {
+    cloudinaryResponse = (await response.json()) as CloudinaryUploadResponse;
+  } catch (error) {
     throw new Error("O Cloudinary retornou uma resposta inválida.");
   }
 
-  if (!response.ok || !result.secure_url) {
+  if (!response.ok || !cloudinaryResponse.secure_url) {
     throw new Error(
-      result.error?.message || "Não foi possível enviar uma imagem ao Cloudinary.",
+      cloudinaryResponse.error?.message ||
+        "Não foi possível enviar uma imagem ao Cloudinary.",
     );
   }
 
-  return result.secure_url;
-}
+  return cloudinaryResponse.secure_url;
+};
 
-export function uploadBookImages(uris: string[]): Promise<string[]> {
+export const uploadBookImages = (uris: string[]): Promise<string[]> => {
   if (uris.length === 0) return Promise.resolve([]);
-  return Promise.all(uris.map(uploadImage));
-}
 
+  return Promise.all(uris.map(uploadImage));
+};

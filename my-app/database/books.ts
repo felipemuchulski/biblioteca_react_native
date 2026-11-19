@@ -1,6 +1,7 @@
 import { getFirestore } from "firebase/firestore";
 
-import type { BookCondition, BookType } from "../src/types/book";
+import type { BookCondition, BookType } from "../src/types";
+import type { Coordinates } from "../src/types";
 import { getFirebaseAuth } from "./firebase";
 
 export type RegisterBookInput = {
@@ -13,6 +14,7 @@ export type RegisterBookInput = {
   condition: BookCondition;
   conditionNote?: string;
   tradeWithBookId?: string;
+  ownerCoordinates?: Coordinates | null;
 };
 
 export async function registerBook(input: RegisterBookInput): Promise<string> {
@@ -33,9 +35,8 @@ export async function registerBook(input: RegisterBookInput): Promise<string> {
   }
 
   const firestore = getFirestore(auth.app);
-  const { collection, doc, serverTimestamp, setDoc } = await import(
-    "firebase/firestore"
-  );
+  const { collection, doc, serverTimestamp, setDoc } =
+    await import("firebase/firestore");
   const reference = doc(collection(firestore, "books"));
   const owner = user.displayName?.trim() || user.email || "Usuário";
   const conditionNote = input.conditionNote?.trim();
@@ -55,6 +56,7 @@ export async function registerBook(input: RegisterBookInput): Promise<string> {
     ...(input.tradeWithBookId
       ? { tradeWithBookId: input.tradeWithBookId }
       : {}),
+    ownerCoordinates: input.ownerCoordinates ?? null,
     createdAt: serverTimestamp(),
   });
 
