@@ -7,7 +7,7 @@ Aplicativo mobile para doação e troca de livros entre pessoas da comunidade, f
 ### 1. Clonar o repositório
 
 ```bash
-git clone <URL_DO_REPOSITORIO> biblioteca_react_native
+git clone <URL_DO_REPOSITORIO>
 ```
 
 ### 2. Entrar na pasta do app
