@@ -29,7 +29,7 @@ Com o Firebase configurado, escolha um ponto no cadastro, confira `coordinates` 
 2. Em **Authentication → Sign-in method**, habilite **E-mail/senha**.
 3. Crie o banco em **Firestore Database**.
 4. Publique as regras do arquivo `firestore.rules` deste diretório em **Firestore Database → Rules**.
-5. Copie `.env.example` para `.env` na raiz de `my-app` e preencha os valores do app Web.
+5. Copie `.env.example` para `.env` na raiz do projeto e preencha os valores do app.
 6. Reinicie o Expo para carregar as variáveis: `npx expo start -c`.
 
 O `.env` é ignorado pelo Git. Os valores `EXPO_PUBLIC_*` são incorporados no app cliente; não coloque senhas de serviço ou chaves privadas nesse arquivo.
