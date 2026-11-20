@@ -46,7 +46,7 @@ const BookOwnerCard = (props: IBookOwnerCardProps) => {
           <Ionicons name="location-outline" size={20} color={AppColors.blue} />
           <Text style={styles.distance}>
             {distanceMeters !== null && distanceMeters !== undefined
-              ? `A aproximadamente ${distance} de você (em linha reta)`
+              ? `A aproximadamente ${distance} de você`
               : "Distância indisponível"}
             {formattedLocation.length > 0 ? (
               <Text style={styles.place}>{`\n${formattedLocation}`}</Text>
